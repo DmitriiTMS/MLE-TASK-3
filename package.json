@@ -1,0 +1,32 @@
+{
+  "name": "3-task",
+  "version": "1.0.0",
+  "description": "Таск-менеджер для команды",
+  "license": "ISC",
+  "type": "commonjs",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node ./dist/main.js",
+    "dev": "nodemon",
+    "build": "tsc",
+    "lint": "eslint ./src/**",
+    "lint:fix": "eslint ./src/** --fix"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}
