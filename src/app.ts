@@ -20,7 +20,13 @@ export class App {
 
 	useRoutes(): void {
 		this.app.get('/login', (req: Request, res: Response, next: NextFunction): void => {
-			next(new HttpError(HttpErrorCode.UNAUTHORIZED, HttpErrorMessages[HttpErrorCode.UNAUTHORIZED], '/login'));
+			next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					'/login',
+				),
+			);
 		});
 	}
 
