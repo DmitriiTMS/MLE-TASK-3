@@ -1,18 +1,22 @@
+import 'reflect-metadata';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import { Server } from 'http';
 import { ILogger } from './common/logger/logger.interface';
 import { IExeptionFilter } from './common/error/exeption.filter.interface';
 import { HttpError } from './common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from './common/error/constants';
+import { inject, injectable } from 'inversify';
+import { TYPES } from './common/types/types';
 
+@injectable()
 export class App {
 	app: Express;
 	server!: Server;
 	port: number;
 
 	constructor(
-		private readonly logger: ILogger,
-		private readonly exeptionFilter: IExeptionFilter,
+		@inject(TYPES.ILogger) private readonly logger: ILogger,
+		@inject(TYPES.IExeptionFilter) private readonly exeptionFilter: IExeptionFilter,
 	) {
 		this.app = express();
 		this.port = 4200;

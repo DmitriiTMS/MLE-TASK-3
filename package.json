@@ -4,7 +4,7 @@
   "description": "Таск-менеджер для команды",
   "license": "ISC",
   "type": "commonjs",
-  "main": "src/main.js",
+  "main": "dist/main.js",
   "scripts": {
     "start": "node ./dist/main.js",
     "dev": "nodemon",
@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "express": "^5.2.1",
+    "inversify": "^6.0.1",
+    "reflect-metadata": "^0.2.2",
     "tslog": "^4.10.2"
   },
   "devDependencies": {
