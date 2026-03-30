@@ -1,12 +1,13 @@
 import express, { Express, Request, Response } from 'express';
 import { Server } from 'http';
+import { ILogger } from './common/logger/logger.interface';
 
 export class App {
 	app: Express;
 	server!: Server;
 	port: number;
 
-	constructor() {
+	constructor(private readonly logger: ILogger) {
 		this.app = express();
 		this.port = 4200;
 	}
@@ -20,6 +21,6 @@ export class App {
 	init(): void {
 		this.useRoutes();
 		this.server = this.app.listen(this.port);
-		console.log(`Server start on http://localhost:${this.port}`);
+		this.logger.log(`Server start on http://localhost:${this.port}`);
 	}
 }

@@ -1,0 +1,29 @@
+import { ILogger } from './logger.interface';
+import { Logger, ILogObj } from 'tslog';
+
+export class TsLogService implements ILogger {
+	public logger: Logger<ILogObj>;
+
+	constructor() {
+		this.logger = new Logger({
+			type: 'pretty',
+			prettyLogTemplate:
+				'{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}} {{logLevelName}} [{{name}}] {{filePathWithLine}} ',
+			prettyLogTimeZone: 'local',
+			maskValuesOfKeys: ['password', 'token', 'secret', 'authorization'],
+			name: 'LoggerService',
+		});
+	}
+
+	log(...args: unknown[]): void {
+		this.logger.info(...args);
+	}
+
+	error(...args: unknown[]): void {
+		this.logger.error(...args);
+	}
+
+	warn(...args: unknown[]): void {
+		this.logger.warn(...args);
+	}
+}
