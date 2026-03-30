@@ -1,8 +1,9 @@
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsparser from '@typescript-eslint/parser';
-import prettier from 'eslint-plugin-prettier';
+// eslint.config.cjs
+const tseslint = require('@typescript-eslint/eslint-plugin');
+const tsparser = require('@typescript-eslint/parser');
+const prettier = require('eslint-plugin-prettier');
 
-export default [
+module.exports = [
     {
         ignores: [
             'dist',
@@ -51,7 +52,6 @@ export default [
             ],
         },
     },
-
     {
         files: ['**/*.spec.ts', '**/*.test.ts'],
         rules: {
