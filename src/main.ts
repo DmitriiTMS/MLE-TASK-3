@@ -6,6 +6,7 @@ import { TsLogService } from './common/logger/tslog-logger.service';
 import { IExeptionFilter } from './common/error/exeption.filter.interface';
 import { ExeptionFilter } from './common/error/exeption.filter';
 import { App } from './app';
+import { AuthController } from './auth/auth.controller';
 
 interface IBotstrap {
 	app: App;
@@ -15,6 +16,7 @@ interface IBotstrap {
 export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<ILogger>(TYPES.ILogger).to(TsLogService);
 	bind<IExeptionFilter>(TYPES.IExeptionFilter).to(ExeptionFilter);
+	bind<AuthController>(TYPES.AuthController).to(AuthController);
 	bind<App>(TYPES.Application).to(App);
 });
 
