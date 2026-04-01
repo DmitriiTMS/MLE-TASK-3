@@ -9,22 +9,23 @@ import { IAuthController } from './auth.controller.interface';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { IAuthService } from './auth.service.interface';
+import { ValidateMiddleware } from '../common/middlewares/validate.middleware';
 
 @injectable()
-export class AuthController extends BaseController implements IAuthController{
+export class AuthController extends BaseController implements IAuthController {
 	constructor(
-        @inject(TYPES.ILogger) logger: ILogger,
-        @inject(TYPES.IAuthService) private authService: IAuthService
-    ) {
+		@inject(TYPES.ILogger) logger: ILogger,
+		@inject(TYPES.IAuthService) private authService: IAuthService,
+	) {
 		super(logger);
 		this.bindRoutes([
-			{ path: AuthPath.REGISTER, method: 'post', func: this.register, middlewares: [] },
-			{ path: AuthPath.LOGIN, method: 'post', func: this.login, middlewares: []  },
+			{ path: AuthPath.REGISTER, method: 'post', func: this.register, middlewares: [new ValidateMiddleware(logger, RegisterDto)] },
+			{ path: AuthPath.LOGIN, method: 'post', func: this.login, middlewares: [new ValidateMiddleware(logger, LoginDto)]},
 		]);
 	}
 
 	async register(req: Request<{}, {}, RegisterDto>, res: Response, next: NextFunction): Promise<any> {
-        const user = await this.authService.register(req.body)
+		const user = await this.authService.register(req.body)
 		this.created(res, user);
 	}
 

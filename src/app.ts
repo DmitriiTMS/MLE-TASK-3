@@ -9,21 +9,21 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from './common/types/types';
 import { AuthController } from './auth/auth.controller';
 import { AuthPath } from './auth/constants';
+import { IConfigService } from './common/config/config.service.interface';
 
 
 @injectable()
 export class App {
 	app: Express;
 	server!: Server;
-	port: number;
 
 	constructor(
+		@inject(TYPES.IConfigService) private readonly configService: IConfigService,
 		@inject(TYPES.ILogger) private readonly logger: ILogger,
 		@inject(TYPES.IExeptionFilter) private readonly exeptionFilter: IExeptionFilter,
 		@inject(TYPES.IAuthController) private readonly authController: AuthController,
 	) {
 		this.app = express();
-		this.port = 4200;
 		this.configureMiddleware();
 	}
 
@@ -48,9 +48,20 @@ export class App {
 	}
 
 	init(): void {
-		this.useRoutes();
-		this.useExeptionFilters();
-		this.server = this.app.listen(this.port);
-		this.logger.log(`Server start on http://localhost:${this.port}`);
+		const port = this.configService.get<string>('PORT')
+		try {
+			if (!port) {
+				this.logger.error('PORT is not defined in environment variables');
+				process.exit(1);
+			}
+			this.useRoutes();
+			this.useExeptionFilters();
+			this.server = this.app.listen(port);
+			this.logger.log(`Server start on ${port} port`);
+		} catch (error: any) {
+			this.logger.error(`Failed to start server: ${error.message}`);
+			process.exit(1);
+		}
+
 	}
 }
