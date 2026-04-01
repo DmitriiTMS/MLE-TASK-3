@@ -6,23 +6,24 @@ import { TsLogService } from './common/logger/tslog-logger.service';
 import { IExeptionFilter } from './common/error/exeption.filter.interface';
 import { ExeptionFilter } from './common/error/exeption.filter';
 import { App } from './app';
-import { AuthController } from './auth/auth.controller';
+import { authModule } from './auth/auth.module';
+import { userModule } from './users/user.module';
 
 interface IBotstrap {
 	app: App;
 	appContainer: Container;
 }
 
-export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
-	bind<ILogger>(TYPES.ILogger).to(TsLogService);
-	bind<IExeptionFilter>(TYPES.IExeptionFilter).to(ExeptionFilter);
-	bind<AuthController>(TYPES.AuthController).to(AuthController);
-	bind<App>(TYPES.Application).to(App);
+export const appModule = new ContainerModule((bind: interfaces.Bind) => {
+	bind<ILogger>(TYPES.ILogger).to(TsLogService).inSingletonScope();
+	bind<IExeptionFilter>(TYPES.IExeptionFilter).to(ExeptionFilter).inSingletonScope();
+	bind<App>(TYPES.Application).to(App).inSingletonScope();
 });
+
 
 async function bootstrap(): Promise<IBotstrap> {
 	const appContainer = new Container();
-	appContainer.load(appBindings);
+	appContainer.load(appModule, authModule, userModule);
 	const app = appContainer.get<App>(TYPES.Application);
 	await app.init();
 	return { app, appContainer };

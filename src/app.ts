@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import express, { Express, json, NextFunction, Response, Request, urlencoded } from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import { Server } from 'http';
 import { ILogger } from './common/logger/logger.interface';
@@ -8,6 +9,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from './common/types/types';
 import { AuthController } from './auth/auth.controller';
 import { AuthPath } from './auth/constants';
+
 
 @injectable()
 export class App {
@@ -18,7 +20,7 @@ export class App {
 	constructor(
 		@inject(TYPES.ILogger) private readonly logger: ILogger,
 		@inject(TYPES.IExeptionFilter) private readonly exeptionFilter: IExeptionFilter,
-		@inject(TYPES.AuthController) private readonly authController: AuthController,
+		@inject(TYPES.IAuthController) private readonly authController: AuthController,
 	) {
 		this.app = express();
 		this.port = 4200;
@@ -26,9 +28,9 @@ export class App {
 	}
 
 	private configureMiddleware(): void {
+		this.app.use(helmet());
 		this.app.use(cors());
-
-		this.app.use(json({}));
+		this.app.use(json());
 		this.app.use(urlencoded({ extended: true }));
 
 		this.app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -37,11 +39,11 @@ export class App {
 		});
 	}
 
-	useRoutes(): void {
+	private useRoutes(): void {
 		this.app.use(AuthPath.BASE_AUTH, this.authController.router);
 	}
 
-	useExeptionFilters(): void {
+	private useExeptionFilters(): void {
 		this.app.use(this.exeptionFilter.catch.bind(this.exeptionFilter));
 	}
 
