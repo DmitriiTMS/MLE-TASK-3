@@ -8,9 +8,9 @@ import { IExeptionFilter } from './common/error/exeption.filter.interface';
 import { inject, injectable } from 'inversify';
 import { TYPES } from './common/types/types';
 import { AuthController } from './auth/auth.controller';
-import { AuthPath } from './auth/constants';
+import { AUTH_PATH } from './auth/constants';
 import { IConfigService } from './common/config/config.service.interface';
-
+import { PrismaService } from './common/database/prisma.service';
 
 @injectable()
 export class App {
@@ -20,6 +20,7 @@ export class App {
 	constructor(
 		@inject(TYPES.IConfigService) private readonly configService: IConfigService,
 		@inject(TYPES.ILogger) private readonly logger: ILogger,
+		@inject(TYPES.PrismaService) private readonly prismaService: PrismaService,
 		@inject(TYPES.IExeptionFilter) private readonly exeptionFilter: IExeptionFilter,
 		@inject(TYPES.IAuthController) private readonly authController: AuthController,
 	) {
@@ -40,15 +41,15 @@ export class App {
 	}
 
 	private useRoutes(): void {
-		this.app.use(AuthPath.BASE_AUTH, this.authController.router);
+		this.app.use(AUTH_PATH.BASE_AUTH, this.authController.router);
 	}
 
 	private useExeptionFilters(): void {
 		this.app.use(this.exeptionFilter.catch.bind(this.exeptionFilter));
 	}
 
-	init(): void {
-		const port = this.configService.get<string>('PORT')
+	async init(): Promise<void> {
+		const port = this.configService.get<string>('PORT');
 		try {
 			if (!port) {
 				this.logger.error('PORT is not defined in environment variables');
@@ -56,12 +57,12 @@ export class App {
 			}
 			this.useRoutes();
 			this.useExeptionFilters();
+			await this.prismaService.connect();
 			this.server = this.app.listen(port);
 			this.logger.log(`Server start on ${port} port`);
 		} catch (error: any) {
 			this.logger.error(`Failed to start server: ${error.message}`);
 			process.exit(1);
 		}
-
 	}
 }

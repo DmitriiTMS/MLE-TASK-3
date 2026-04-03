@@ -1,25 +1,26 @@
 import 'reflect-metadata';
-import { injectable } from 'inversify';
-import { User } from './entitys/user.entity';
+import { inject, injectable } from 'inversify';
+import { UserEntity } from './entitys/user.entity';
 import { IUserService } from './user.service.interface';
 import { UserDto } from './dto/user.dto';
-
+import { TYPES } from '../common/types/types';
+import { UserRepository } from './user.repository';
+import { UserModel } from '@prisma/client';
 
 @injectable()
 export class UserService implements IUserService {
+	constructor(@inject(TYPES.IUserRepository) private readonly userRepository: UserRepository) {}
 
-    async createUser(userDto: UserDto) {
-        const { name, email, passwordHash } = userDto
-        const user = new User(name, email);
-        user.setPasswordHash(passwordHash);
+	async createUser(userDto: UserDto): Promise<UserModel | null> {
+		const { name, email, passwordHash } = userDto;
+		const user = new UserEntity(name, email);
+		user.setPasswordHash(passwordHash);
 
-        const savedUser = {
-            id: 1,
-            name: user.name,
-            email: user.email,
-            password: user.passwordHash
-        };
-        user.setId(savedUser.id); 
-        return user.toDTO();
-    }
+		const existUser = await this.userRepository.findByEmail(email);
+		if (existUser) {
+			return null;
+		}
+
+		return await this.userRepository.create(user);
+	}
 }

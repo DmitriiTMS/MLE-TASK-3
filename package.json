@@ -6,13 +6,16 @@
   "type": "commonjs",
   "main": "dist/main.js",
   "scripts": {
-    "start": "node ./dist/main.js",
-    "dev": "nodemon",
-    "build": "tsc",
+    "build": "tsc && prisma generate",
+    "start": "prisma migrate deploy && node ./dist/src/main.js",
+    "dev": "prisma generate && prisma migrate deploy && nodemon",
+    "migrate:dev": "prisma migrate dev",
+    "generate:dev": "prisma generate",
     "lint": "eslint ./src/**",
     "lint:fix": "eslint ./src/** --fix"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -21,6 +24,7 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "inversify": "^6.0.1",
+    "prisma": "^6.19.3",
     "reflect-metadata": "^0.2.2",
     "tslog": "^4.10.2"
   },

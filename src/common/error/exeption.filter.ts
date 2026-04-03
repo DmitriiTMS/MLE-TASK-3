@@ -10,7 +10,7 @@ import { TYPES } from '../types/types';
 export class ExeptionFilter implements IExeptionFilter {
 	constructor(@inject(TYPES.ILogger) private readonly logger: ILogger) {}
 
-	catch(err: Error | HttpError, req: Request, res: Response, next: NextFunction): void {
+	catch(err: Error | HttpError, _req: Request, res: Response, next: NextFunction): void {
 		if (err instanceof HttpError) {
 			this.logger.error(`[${err.context}] Ошибка [${err.statusCode}] : ${err.message}`);
 			res.status(err.statusCode).send({ message: err.message });

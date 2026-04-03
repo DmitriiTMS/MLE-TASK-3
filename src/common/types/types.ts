@@ -3,6 +3,7 @@ export const TYPES = {
 	IConfigService: Symbol.for('IConfigService'),
 	ILogger: Symbol.for('ILogger'),
 	IExeptionFilter: Symbol.for('IExeptionFilter'),
+	PrismaService: Symbol.for('PrismaService'),
 
 	IPasswordHasher: Symbol.for('IPasswordHasher'),
 
@@ -10,4 +11,5 @@ export const TYPES = {
 	IAuthService: Symbol.for('IAuthService'),
 
 	IUserService: Symbol.for('IUserService'),
+	IUserRepository: Symbol.for('IUserRepository'),
 };

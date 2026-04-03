@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ContainerModule, interfaces } from "inversify";
+import { ContainerModule, interfaces } from 'inversify';
 import { AuthController } from './auth.controller';
 import { TYPES } from '../common/types/types';
 import { IAuthController } from './auth.controller.interface';
@@ -9,7 +9,7 @@ import { IAuthService } from './auth.service.interface';
 import { AuthService } from './auth.service';
 
 export const authModule = new ContainerModule((bind: interfaces.Bind) => {
-    bind<IAuthController>(TYPES.IAuthController).to(AuthController).inSingletonScope();
-    bind<IAuthService>(TYPES.IAuthService).to(AuthService).inSingletonScope();
-    bind<IPasswordHasher>(TYPES.IPasswordHasher).to(BcryptHasher).inSingletonScope();
+	bind<IAuthController>(TYPES.IAuthController).to(AuthController).inSingletonScope();
+	bind<IAuthService>(TYPES.IAuthService).to(AuthService).inSingletonScope();
+	bind<IPasswordHasher>(TYPES.IPasswordHasher).to(BcryptHasher).inSingletonScope();
 });
