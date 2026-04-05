@@ -7,7 +7,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc && prisma generate",
-    "start": "prisma migrate deploy && node ./dist/src/main.js",
+    "start": "prisma migrate deploy && node ./dist/main.js",
     "dev": "prisma generate && prisma migrate deploy && nodemon",
     "migrate:dev": "prisma migrate dev",
     "generate:dev": "prisma generate",
@@ -19,11 +19,13 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "inversify": "^6.0.1",
+    "jsonwebtoken": "^9.0.3",
     "prisma": "^6.19.3",
     "reflect-metadata": "^0.2.2",
     "tslog": "^4.10.2"
@@ -31,8 +33,10 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",

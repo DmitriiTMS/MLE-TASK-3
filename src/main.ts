@@ -11,6 +11,7 @@ import { userModule } from './users/user.module';
 import { IConfigService } from './common/config/config.service.interface';
 import { ConfigService } from './common/config/config.service';
 import { PrismaService } from './common/database/prisma.service';
+import { JwtService } from './auth/jwt/jwt.service';
 
 interface IBotstrap {
 	app: App;
@@ -21,6 +22,7 @@ export const appModule = new ContainerModule((bind: interfaces.Bind) => {
 	bind<IConfigService>(TYPES.IConfigService).to(ConfigService).inSingletonScope();
 	bind<ILogger>(TYPES.ILogger).to(TsLogService).inSingletonScope();
 	bind<IExeptionFilter>(TYPES.IExeptionFilter).to(ExeptionFilter).inSingletonScope();
+	bind<JwtService>(TYPES.JwtService).to(JwtService).inSingletonScope();
 	bind<PrismaService>(TYPES.PrismaService).to(PrismaService).inSingletonScope();
 	bind<App>(TYPES.Application).to(App).inSingletonScope();
 });

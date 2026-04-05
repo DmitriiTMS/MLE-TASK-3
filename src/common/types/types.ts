@@ -4,6 +4,7 @@ export const TYPES = {
 	ILogger: Symbol.for('ILogger'),
 	IExeptionFilter: Symbol.for('IExeptionFilter'),
 	PrismaService: Symbol.for('PrismaService'),
+	JwtService: Symbol.for('JwtService'),
 
 	IPasswordHasher: Symbol.for('IPasswordHasher'),
 

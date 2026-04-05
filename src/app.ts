@@ -11,6 +11,8 @@ import { AuthController } from './auth/auth.controller';
 import { AUTH_PATH } from './auth/constants';
 import { IConfigService } from './common/config/config.service.interface';
 import { PrismaService } from './common/database/prisma.service';
+import cookieParser from 'cookie-parser';
+
 
 @injectable()
 export class App {
@@ -30,7 +32,8 @@ export class App {
 
 	private configureMiddleware(): void {
 		this.app.use(helmet());
-		this.app.use(cors());
+		this.app.use(cors({ credentials: true }));
+		this.app.use(cookieParser());
 		this.app.use(json());
 		this.app.use(urlencoded({ extended: true }));
 

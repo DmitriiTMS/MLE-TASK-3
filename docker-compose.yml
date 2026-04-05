@@ -7,10 +7,41 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    networks:
+      - app_network
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # app:
+  #   build: .
+  #   container_name: express
+  #   ports:
+  #     - "${PORT}:4200"
+  #   environment:
+  #     - DATABASE_URL=${DATABASE_URL}
+  #     - PORT=${PORT}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - app_network
+  #   env_file:
+  #     - .env
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   postgres_data:
