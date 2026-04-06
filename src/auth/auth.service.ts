@@ -6,18 +6,18 @@ import { IUserService } from '../users/user.service.interface';
 import { RegisterDto } from './dto/register.dto';
 import { IPasswordHasher } from '../common/utils/hasher/hasher.interface';
 import { UserModel } from '@prisma/client';
-import { UserRepository } from '../users/user.repository';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from './jwt/jwt.service';
 import { ILogger } from '../common/logger/logger.interface';
 import { TokensPair } from './jwt/types';
+import { IUserRepository } from '../users/user.repository.interface';
 
 @injectable()
 export class AuthService implements IAuthService {
 	constructor(
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IPasswordHasher) private readonly passwordHasher: IPasswordHasher,
-		@inject(TYPES.IUserRepository) private readonly userRepository: UserRepository,
+		@inject(TYPES.IUserRepository) private readonly userRepository: IUserRepository,
 		@inject(TYPES.ILogger) private readonly logger: ILogger,
 		@inject(TYPES.JwtService) private readonly jwtService: JwtService,
 	) { }

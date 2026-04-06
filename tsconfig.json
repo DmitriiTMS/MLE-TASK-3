@@ -17,8 +17,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["node",]
+    "types": ["node", "ts-node", "jest"]
   },
-  "include": ["src/**/*", "src/auth/custom.d.ts"],
-  "exclude": ["node_modules", "dist",]
+  "include": ["src/**/*", "src/auth/custom.d.ts",],
+  "exclude": ["node_modules", "dist"]
 }

@@ -50,7 +50,7 @@ export class AuthController extends BaseController implements IAuthController {
 				path: AUTH_PATH.GET_ME,
 				method: 'get',
 				func: this.getMe,
-				middlewares: [new AuthMiddleware(jwtService)],
+				middlewares: [new AuthMiddleware(this.jwtService)],
 			},
 		]);
 	}

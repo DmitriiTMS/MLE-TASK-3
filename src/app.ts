@@ -51,7 +51,7 @@ export class App {
 		this.app.use(this.exeptionFilter.catch.bind(this.exeptionFilter));
 	}
 
-	async init(): Promise<void> {
+	public async init(): Promise<void> {
 		const port = this.configService.get<string>('PORT');
 		try {
 			if (!port) {
@@ -67,5 +67,9 @@ export class App {
 			this.logger.error(`Failed to start server: ${error.message}`);
 			process.exit(1);
 		}
+	}
+
+	public close(): void {
+		this.server.close();
 	}
 }

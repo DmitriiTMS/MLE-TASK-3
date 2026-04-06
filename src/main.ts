@@ -13,7 +13,7 @@ import { ConfigService } from './common/config/config.service';
 import { PrismaService } from './common/database/prisma.service';
 import { JwtService } from './auth/jwt/jwt.service';
 
-interface IBotstrap {
+interface IBootstrap {
 	app: App;
 	appContainer: Container;
 }
@@ -27,7 +27,7 @@ export const appModule = new ContainerModule((bind: interfaces.Bind) => {
 	bind<App>(TYPES.Application).to(App).inSingletonScope();
 });
 
-async function bootstrap(): Promise<IBotstrap> {
+async function bootstrap(): Promise<IBootstrap> {
 	const appContainer = new Container();
 	appContainer.load(appModule, authModule, userModule);
 	const app = appContainer.get<App>(TYPES.Application);
