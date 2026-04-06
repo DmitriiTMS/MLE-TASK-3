@@ -2,11 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "moduleResolution": "node",
     "lib": ["ES2023"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
+    "strictPropertyInitialization": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
@@ -17,8 +17,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["node"],
+    "types": ["node", "ts-node", "jest"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/auth/custom.d.ts",],
   "exclude": ["node_modules", "dist"]
 }

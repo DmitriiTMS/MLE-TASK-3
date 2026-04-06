@@ -10,8 +10,7 @@ export class TsLogService implements ILogger {
 	constructor() {
 		this.logger = new Logger({
 			type: 'pretty',
-			prettyLogTemplate:
-				'{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}} {{logLevelName}} [{{name}}] {{filePathWithLine}} ',
+			prettyLogTemplate: '{{dd}}.{{mm}}.{{yyyy}} {{hh}}:{{MM}}:{{ss}} {{logLevelName}} [{{name}}] ',
 			prettyLogTimeZone: 'local',
 			maskValuesOfKeys: ['password', 'token', 'secret', 'authorization'],
 			name: 'LoggerService',
