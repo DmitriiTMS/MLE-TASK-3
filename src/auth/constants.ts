@@ -1,10 +1,11 @@
 import { BASE_PREFIX } from '../common/base/constants';
 
-export const AUTH_PATH = {
-	BASE_AUTH: `${BASE_PREFIX}/auth`,
-	REGISTER: '/register',
-	LOGIN: '/login',
-	REFRESH_TOKEN: '/refresh-token',
-	GET_ME: '/get-me',
-	LOGOUT: '/logout',
+export const BASE_AUTH_PATH = `${BASE_PREFIX}/auth`;
+
+export const AUTH_PATHS = {
+	REGISTER: `/register`,
+	LOGIN: `/login`,
+	REFRESH_TOKEN: `/refresh-token`,
+	GET_ME: `/get-me`,
+	LOGOUT: `/logout`,
 } as const;

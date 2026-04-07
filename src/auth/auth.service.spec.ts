@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import 'reflect-metadata';
 import { AuthService } from './auth.service';
 import { IUserService } from '../users/user.service.interface';
@@ -89,7 +90,7 @@ describe('AuthService', () => {
 			JwtServiceMock.generateTokens.mockReturnValue(mockTokens);
 
 			const result = await authService.register(registerDto);
-	
+
 			expect(UserRepositoryMock.findByEmail).toHaveBeenCalledWith(registerDto.email);
 			expect(PasswordHasherMock.hash).toHaveBeenCalledWith(registerDto.password);
 			expect(UserServiceMock.createUser).toHaveBeenCalledWith({
@@ -97,7 +98,10 @@ describe('AuthService', () => {
 				email: registerDto.email,
 				passwordHash: 'hashedPassword',
 			});
-			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({ email: registerDto.email, userId: mockUser.id });
+			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({
+				email: registerDto.email,
+				userId: mockUser.id,
+			});
 			expect(result).toEqual({
 				id: mockUser.id,
 				accessToken: mockTokens.accessToken,
@@ -162,7 +166,10 @@ describe('AuthService', () => {
 			const result = await authService.login(loginDto);
 
 			expect(authService.validateUser).toHaveBeenCalledWith(loginDto);
-			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({ email: loginDto.email, userId: mockUser.id });
+			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({
+				email: loginDto.email,
+				userId: mockUser.id,
+			});
 			expect(result).toEqual({
 				id: mockUser.id,
 				accessToken: mockTokens.accessToken,

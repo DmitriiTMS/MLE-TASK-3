@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
 import { App } from '../../src/app';
 import { boot } from '../../src/main';
 import { PrismaService } from '../../src/common/database/prisma.service';

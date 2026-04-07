@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateProjectsDto {
 	@IsString({ message: 'Поле [name] должно быть строкой' })
@@ -8,6 +8,6 @@ export class CreateProjectsDto {
 
 	@IsString({ message: 'Поле [description] должно быть строкой' })
 	@MaxLength(1000, { message: 'Поле [description] не должно превышать 1000 символов' })
-	@IsNotEmpty({ message: 'Поле [description] не может быть пустым' })
+	@IsOptional()
 	description: string;
 }

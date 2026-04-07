@@ -8,10 +8,12 @@ import { IExeptionFilter } from './common/error/exeption.filter.interface';
 import { inject, injectable } from 'inversify';
 import { TYPES } from './common/types/types';
 import { AuthController } from './auth/auth.controller';
-import { AUTH_PATH } from './auth/constants';
+import { BASE_AUTH_PATH } from './auth/constants';
 import { IConfigService } from './common/config/config.service.interface';
 import { PrismaService } from './common/database/prisma.service';
 import cookieParser from 'cookie-parser';
+import { ProjectsController } from './projects/projects.controller';
+import { BASE_PROJECTS_PATH } from './projects/constants';
 
 @injectable()
 export class App {
@@ -24,6 +26,7 @@ export class App {
 		@inject(TYPES.PrismaService) private readonly prismaService: PrismaService,
 		@inject(TYPES.IExeptionFilter) private readonly exeptionFilter: IExeptionFilter,
 		@inject(TYPES.IAuthController) private readonly authController: AuthController,
+		@inject(TYPES.IProjectsController) private readonly projectsController: ProjectsController,
 	) {
 		this.app = express();
 		this.configureMiddleware();
@@ -36,14 +39,15 @@ export class App {
 		this.app.use(json());
 		this.app.use(urlencoded({ extended: true }));
 
-		this.app.use((req: Request, _res: Response, next: NextFunction) => {
+		this.app.use((req: Request, _res: Response, next: NextFunction) => {		
 			this.logger.log(`[${req.method}] ${req.path}`);
 			next();
 		});
 	}
 
 	private useRoutes(): void {
-		this.app.use(AUTH_PATH.BASE_AUTH, this.authController.router);
+		this.app.use(BASE_AUTH_PATH, this.authController.router);
+		this.app.use(BASE_PROJECTS_PATH, this.projectsController.router);
 	}
 
 	private useExeptionFilters(): void {

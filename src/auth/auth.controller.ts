@@ -4,7 +4,7 @@ import { BaseController } from '../common/base/base.controller';
 import { TYPES } from '../common/types/types';
 import { ILogger } from '../common/logger/logger.interface';
 import { NextFunction, Request, Response } from 'express';
-import { AUTH_PATH } from './constants';
+import { AUTH_PATHS, BASE_AUTH_PATH } from './constants';
 import { IAuthController } from './auth.controller.interface';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -23,34 +23,35 @@ export class AuthController extends BaseController implements IAuthController {
 		@inject(TYPES.JwtService) private readonly jwtService: JwtService,
 	) {
 		super(logger);
+		this.basePath = BASE_AUTH_PATH;
 		this.bindRoutes([
 			{
-				path: AUTH_PATH.REGISTER,
+				path: AUTH_PATHS.REGISTER,
 				method: 'post',
 				func: this.register,
 				middlewares: [new ValidateMiddleware(logger, RegisterDto)],
 			},
 			{
-				path: AUTH_PATH.LOGIN,
+				path: AUTH_PATHS.LOGIN,
 				method: 'post',
 				func: this.login,
 				middlewares: [new ValidateMiddleware(logger, LoginDto)],
 			},
 			{
-				path: AUTH_PATH.REFRESH_TOKEN,
+				path: AUTH_PATHS.REFRESH_TOKEN,
 				method: 'post',
 				func: this.refresh,
 			},
 			{
-				path: AUTH_PATH.LOGOUT,
+				path: AUTH_PATHS.LOGOUT,
 				method: 'post',
 				func: this.logout,
 			},
 			{
-				path: AUTH_PATH.GET_ME,
+				path: AUTH_PATHS.GET_ME,
 				method: 'get',
 				func: this.getMe,
-				middlewares: [new AuthMiddleware(this.jwtService)],
+				middlewares: [new AuthMiddleware(this.jwtService, logger)],
 			},
 		]);
 	}
@@ -61,12 +62,13 @@ export class AuthController extends BaseController implements IAuthController {
 		next: NextFunction,
 	): Promise<void> {
 		const result = await this.authService.register(req.body);
+
 		if (!result) {
 			return next(
 				new HttpError(
 					HttpErrorCode.CONFLICT,
 					HttpErrorMessages[HttpErrorCode.CONFLICT],
-					AUTH_PATH.REGISTER,
+					AUTH_PATHS.REGISTER,
 				),
 			);
 		}
@@ -90,7 +92,7 @@ export class AuthController extends BaseController implements IAuthController {
 				new HttpError(
 					HttpErrorCode.UNAUTHORIZED,
 					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
-					AUTH_PATH.LOGIN,
+					AUTH_PATHS.LOGIN,
 				),
 			);
 		}
@@ -110,7 +112,7 @@ export class AuthController extends BaseController implements IAuthController {
 				new HttpError(
 					HttpErrorCode.TOKEN_MISSING,
 					HttpErrorMessages[HttpErrorCode.TOKEN_MISSING],
-					AUTH_PATH.REFRESH_TOKEN,
+					AUTH_PATHS.REFRESH_TOKEN,
 				),
 			);
 		}
@@ -122,7 +124,7 @@ export class AuthController extends BaseController implements IAuthController {
 				new HttpError(
 					HttpErrorCode.TOKEN_INVALID,
 					HttpErrorMessages[HttpErrorCode.TOKEN_INVALID],
-					AUTH_PATH.REFRESH_TOKEN,
+					AUTH_PATHS.REFRESH_TOKEN,
 				),
 			);
 		}
@@ -152,7 +154,7 @@ export class AuthController extends BaseController implements IAuthController {
 				new HttpError(
 					HttpErrorCode.CONFLICT,
 					HttpErrorMessages[HttpErrorCode.CONFLICT],
-					AUTH_PATH.GET_ME,
+					AUTH_PATHS.GET_ME,
 				),
 			);
 		}

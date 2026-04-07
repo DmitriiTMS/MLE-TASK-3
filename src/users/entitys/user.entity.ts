@@ -1,4 +1,3 @@
-import { UserIdResponse } from '../dto/user-id.response';
 
 export class UserEntity {
 	private _id?: number;
@@ -37,10 +36,6 @@ export class UserEntity {
 
 	get updatedAt(): Date {
 		return this._updatedAt;
-	}
-
-	setId(id: number): void {
-		this._id = id;
 	}
 
 	setPasswordHash(hash: string): void {
