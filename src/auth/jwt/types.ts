@@ -1,14 +1,16 @@
 export interface TokenPayload {
-    email: string;
+	userId: number;
+	email: string;
 }
 
 export interface TokensPair {
-    accessToken: string;
-    refreshToken: string;
+	accessToken: string;
+	refreshToken: string;
 }
 
 export interface DecodedToken {
-    email: string;
-    iat: number;
-    exp: number;
+	email: string;
+	userId: number;
+	iat: number;
+	exp: number;
 }

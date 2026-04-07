@@ -9,7 +9,7 @@ import { UserModel } from '@prisma/client';
 
 @injectable()
 export class UserService implements IUserService {
-	constructor(@inject(TYPES.IUserRepository) private readonly userRepository: UserRepository) { }
+	constructor(@inject(TYPES.IUserRepository) private readonly userRepository: UserRepository) {}
 
 	async createUser(userDto: UserDto): Promise<UserModel | null> {
 		const { name, email, passwordHash } = userDto;

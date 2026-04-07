@@ -7,6 +7,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../types/types';
 import { ILogger } from '../logger/logger.interface';
 import { ParsedQs } from 'qs';
+import { HttpErrorCode } from '../error/constants';
 
 export type ValidateSource = 'body' | 'query' | 'params' | 'headers';
 
@@ -123,8 +124,8 @@ export class ValidateMiddleware implements IMiddleware {
 			}),
 		);
 
-		res.status(422).json({
-			statusCode: 422,
+		res.status(HttpErrorCode.BAD_REQUEST).json({
+			statusCode: HttpErrorCode.BAD_REQUEST,
 			errors: formattedErrors,
 		});
 	}

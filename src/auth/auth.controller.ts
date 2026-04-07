@@ -74,7 +74,7 @@ export class AuthController extends BaseController implements IAuthController {
 			httpOnly: true,
 			secure: true,
 			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000
+			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 		this.created(res, { id: result.id, accessToken: result.accessToken });
 	}
@@ -98,16 +98,12 @@ export class AuthController extends BaseController implements IAuthController {
 			httpOnly: true,
 			secure: true,
 			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000
+			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 		this.ok(res, { id: result.id, accessToken: result.accessToken });
 	}
 
-	async refresh(
-		req: Request,
-		res: Response,
-		next: NextFunction
-	): Promise<void> {
+	async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
 		const refreshToken = req.cookies.refreshToken;
 		if (!refreshToken) {
 			return next(
@@ -115,8 +111,8 @@ export class AuthController extends BaseController implements IAuthController {
 					HttpErrorCode.TOKEN_MISSING,
 					HttpErrorMessages[HttpErrorCode.TOKEN_MISSING],
 					AUTH_PATH.REFRESH_TOKEN,
-				)
-			)
+				),
+			);
 		}
 
 		const tokens = await this.authService.refreshTokens(refreshToken);
@@ -127,35 +123,28 @@ export class AuthController extends BaseController implements IAuthController {
 					HttpErrorCode.TOKEN_INVALID,
 					HttpErrorMessages[HttpErrorCode.TOKEN_INVALID],
 					AUTH_PATH.REFRESH_TOKEN,
-				)
-			)
+				),
+			);
 		}
 
 		res.cookie('refreshToken', tokens.refreshToken, {
 			httpOnly: true,
 			secure: true,
 			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000
+			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 
 		this.ok(res, { accessToken: tokens.accessToken });
 	}
 
-	async logout(
-		_req: Request,
-		res: Response,
-	): Promise<void> {
+	async logout(_req: Request, res: Response): Promise<void> {
 		res.clearCookie('refreshToken');
 		this.ok(res, { message: 'Logout successful' });
 	}
 
-	async getMe(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	): Promise<void> {
+	async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
 		if (!req.user?.email) {
-			return
+			return;
 		}
 		const result = await this.authService.getMe(req.user?.email);
 		if (!result) {
