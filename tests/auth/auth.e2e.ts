@@ -83,7 +83,7 @@ describe('AuthController', () => {
                 .expect(409);
         });
 
-        it('should return 422 if email is invalid', async () => {
+        it('should return 400 if email is invalid', async () => {
             const invalidUser = {
                 name: 'John Doe',
                 email: 'invalid-email',
@@ -93,10 +93,10 @@ describe('AuthController', () => {
             await request(application.app)
                 .post('/api/auth/register')
                 .send(invalidUser)
-                .expect(422);
+                .expect(400);
         });
 
-        it('should return 422 if name is missing', async () => {
+        it('should return 400 if name is missing', async () => {
             const invalidUser = {
                 email: 'john@example.com',
                 password: 'password123',
@@ -105,7 +105,7 @@ describe('AuthController', () => {
             await request(application.app)
                 .post('/api/auth/register')
                 .send(invalidUser)
-                .expect(422);
+                .expect(400);
         });
     });
 
@@ -160,14 +160,14 @@ describe('AuthController', () => {
                 .expect(401);
         });
 
-        it('should return 422 with invalid email format', async () => {
+        it('should return 400 with invalid email format', async () => {
             await request(application.app)
                 .post('/api/auth/login')
                 .send({
                     email: 'invalid-email',
                     password: testUser.password
                 })
-                .expect(422);
+                .expect(400);
         });
     });
 

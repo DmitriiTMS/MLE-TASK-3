@@ -13,7 +13,6 @@ import { IConfigService } from './common/config/config.service.interface';
 import { PrismaService } from './common/database/prisma.service';
 import cookieParser from 'cookie-parser';
 
-
 @injectable()
 export class App {
 	app: Express;

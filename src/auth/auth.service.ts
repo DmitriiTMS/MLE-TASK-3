@@ -20,7 +20,7 @@ export class AuthService implements IAuthService {
 		@inject(TYPES.IUserRepository) private readonly userRepository: IUserRepository,
 		@inject(TYPES.ILogger) private readonly logger: ILogger,
 		@inject(TYPES.JwtService) private readonly jwtService: JwtService,
-	) { }
+	) {}
 
 	async register(registerDto: RegisterDto): Promise<IRegisterResponse | null> {
 		const { name, email, password } = registerDto;
@@ -43,13 +43,14 @@ export class AuthService implements IAuthService {
 		}
 
 		const tokens = this.jwtService.generateTokens({
+			userId: createdUser.id,
 			email,
 		});
 
 		return {
 			id: createdUser.id,
 			accessToken: tokens.accessToken,
-			refreshToken: tokens.refreshToken
+			refreshToken: tokens.refreshToken,
 		};
 	}
 
@@ -57,17 +58,18 @@ export class AuthService implements IAuthService {
 		const { email } = loginDto;
 		const result = await this.validateUser(loginDto);
 		if (!result) {
-			return null
+			return null;
 		}
 
 		const tokens = this.jwtService.generateTokens({
+			userId: result.id,
 			email,
 		});
 
 		return {
 			id: result.id,
 			accessToken: tokens.accessToken,
-			refreshToken: tokens.refreshToken
+			refreshToken: tokens.refreshToken,
 		};
 	}
 
