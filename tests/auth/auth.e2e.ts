@@ -23,7 +23,6 @@ describe('AuthController', () => {
         const { app } = await boot;
         application = app;
 
-        await prismaService.client.userModel.deleteMany();
     });
 
     afterAll(async () => {
@@ -41,9 +40,9 @@ describe('AuthController', () => {
 
     describe('POST /auth/register', () => {
         const testUser = {
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: 'password123',
+            name: 'user',
+            email: 'user@bk.ru',
+            password: '1234',
         };
 
         it('should successfully register a new user', async () => {
@@ -86,9 +85,9 @@ describe('AuthController', () => {
 
         it('should return 400 if email is invalid', async () => {
             const invalidUser = {
-                name: 'John Doe',
+                name: 'user',
                 email: 'invalid-email',
-                password: 'password123',
+                password: '1234',
             };
 
             await request(application.app)
@@ -99,8 +98,8 @@ describe('AuthController', () => {
 
         it('should return 400 if name is missing', async () => {
             const invalidUser = {
-                email: 'john@example.com',
-                password: 'password123',
+                email: 'user1@bk.ru',
+                password: '1234',
             };
 
             await request(application.app)
@@ -112,9 +111,9 @@ describe('AuthController', () => {
 
     describe('POST /auth/login', () => {
         const testUser = {
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: 'password123',
+            name: 'user',
+            email: 'user@bk.ru',
+            password: '1234',
         };
 
         beforeEach(async () => {
@@ -156,7 +155,7 @@ describe('AuthController', () => {
                 .post('/api/auth/login')
                 .send({
                     email: 'nonexistent@example.com',
-                    password: 'password123'
+                    password: '1234'
                 })
                 .expect(401);
         });
@@ -174,9 +173,9 @@ describe('AuthController', () => {
 
     describe('POST /auth/refresh', () => {
         const testUser = {
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: 'password123',
+            name: 'user',
+            email: 'user@bk.ru',
+            password: '1234',
         };
         let refreshToken: string;
 
@@ -184,7 +183,7 @@ describe('AuthController', () => {
             const response = await request(application.app)
                 .post('/api/auth/register')
                 .send(testUser);
-            
+
             const cookies = response.headers['set-cookie'];
             if (cookies && cookies[0]) {
                 refreshToken = cookies[0].split('=')[1].split(';')[0];
@@ -199,7 +198,7 @@ describe('AuthController', () => {
 
             expect(response.body).toHaveProperty('accessToken');
             expect(typeof response.body.accessToken).toBe('string');
-            
+
             const cookies = response.headers['set-cookie'];
             expect(cookies).toBeDefined();
             expect(cookies[0]).toContain('refreshToken');
@@ -212,7 +211,7 @@ describe('AuthController', () => {
         });
 
         it('should return 498 with invalid refresh token', async () => {
-          
+
             await request(application.app)
                 .post('/api/auth/refresh-token')
                 .set('Cookie', ['refreshToken=invalid-token'])
@@ -222,9 +221,9 @@ describe('AuthController', () => {
 
     describe('GET /auth/get-me', () => {
         const testUser = {
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: 'password123',
+            name: 'user',
+            email: 'user@bk.ru',
+            password: '1234',
         };
         let accessToken: string;
 
@@ -232,13 +231,13 @@ describe('AuthController', () => {
             const response = await request(application.app)
                 .post('/api/auth/register')
                 .send(testUser);
-            
+
             accessToken = response.body.accessToken;
         });
 
         it('should return user info with valid token', async () => {
             const response = await request(application.app)
-                .get('/api/auth/get-me') 
+                .get('/api/auth/get-me')
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -254,7 +253,7 @@ describe('AuthController', () => {
 
         it('should return 401 with invalid token', async () => {
             await request(application.app)
-                .get('/api/auth/get-me') 
+                .get('/api/auth/get-me')
                 .set('Authorization', 'Bearer invalid-token')
                 .expect(401);
         });
@@ -262,9 +261,9 @@ describe('AuthController', () => {
 
     describe('POST /auth/logout', () => {
         const testUser = {
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: 'password123',
+            name: 'user',
+            email: 'user@bk.ru',
+            password: '1234',
         };
         let accessToken: string;
         let refreshToken: string;
@@ -273,7 +272,7 @@ describe('AuthController', () => {
             const response = await request(application.app)
                 .post('/api/auth/register')
                 .send(testUser);
-            
+
             accessToken = response.body.accessToken;
             const cookies = response.headers['set-cookie'];
             if (cookies && cookies[0]) {
@@ -290,7 +289,7 @@ describe('AuthController', () => {
 
             expect(response.body).toHaveProperty('message');
             expect(response.body.message).toBe('Logout successful');
-            
+
             const cookies = response.headers['set-cookie'];
             expect(cookies).toBeDefined();
             expect(cookies[0]).toContain('refreshToken=;');
