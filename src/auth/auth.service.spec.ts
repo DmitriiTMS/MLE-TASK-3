@@ -26,6 +26,7 @@ const PasswordHasherMock = {
 const UserRepositoryMock = {
 	create: jest.fn(),
 	findByEmail: jest.fn(),
+	findById: jest.fn(),
 } as jest.Mocked<IUserRepository>;
 
 const LoggerMock = {

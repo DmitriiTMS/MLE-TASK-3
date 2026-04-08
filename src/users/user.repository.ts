@@ -11,13 +11,18 @@ export class UserRepository implements IUserRepository {
 	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) { }
 
 	async create(user: UserEntity): Promise<UserModel> {
-		return await this.prismaService.client.userModel.create({
-			data: {
-				name: user.name,
-				email: user.email,
-				hasPassword: user.passwordHash,
-			},
-		});
+		try {
+			return await this.prismaService.client.userModel.create({
+				data: {
+					name: user.name,
+					email: user.email,
+					hasPassword: user.passwordHash,
+				},
+			});
+		} catch (error) {
+			throw error;
+		}
+
 	}
 
 	async findByEmail(email: string): Promise<UserModel | null> {

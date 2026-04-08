@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { ProjectModel } from "@prisma/client";
-import { IProjectsRepository } from "./project.repository.interface";
+import { IProjectsRepository } from "./projects.repository.interface";
 import { inject, injectable } from "inversify";
 import { TYPES } from '../common/types/types';
 import { PrismaService } from '../common/database/prisma.service';

@@ -45,14 +45,14 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		if (!req.user) {
 			return next(
 				new HttpError(
-					HttpErrorCode.BAD_REQUEST,
-					HttpErrorMessages[HttpErrorCode.BAD_REQUEST],
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
 					PROJECTS_PATH.CREATE,
 				),
 			);
 		}
 		const { userId } = req.user;
 		await this.projectsService.create({ name, description }, userId)
-		this.ok(res, {});
+		this.ok(res, { message: 'Project created' });
 	}
 }
