@@ -5,6 +5,8 @@ import { PrismaService } from '../../src/common/database/prisma.service';
 import { ILogger } from '../../src/common/logger/logger.interface';
 import request from 'supertest';
 
+// npm run test:e2e -- tests/auth/auth.e2e.ts
+
 const LoggerMock = {
     logger: undefined,
     log: jest.fn(),

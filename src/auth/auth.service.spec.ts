@@ -14,6 +14,8 @@ import { Container } from 'inversify';
 import { IAuthService } from './auth.service.interface';
 import { TYPES } from '../common/types/types';
 
+// npm run test -- src/auth/auth.service.spec.ts
+
 const UserServiceMock = {
 	createUser: jest.fn(),
 } as jest.Mocked<IUserService>;

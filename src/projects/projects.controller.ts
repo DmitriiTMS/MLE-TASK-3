@@ -42,7 +42,7 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		next: NextFunction,
 	): Promise<void> {
 		const { name, description } = req.body;
-		if (!req.user) {
+		if (!req.user?.userId) {
 			return next(
 				new HttpError(
 					HttpErrorCode.UNAUTHORIZED,

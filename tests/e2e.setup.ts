@@ -13,7 +13,6 @@ async function setupTestDatabase() {
     }
     
     try {
-
         console.log('📦 Pushing database schema...');
         execSync('npx prisma db push --force-reset', {
             stdio: 'inherit',

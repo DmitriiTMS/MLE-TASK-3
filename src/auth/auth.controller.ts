@@ -146,7 +146,13 @@ export class AuthController extends BaseController implements IAuthController {
 
 	async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
 		if (!req.user?.email) {
-			return;
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					AUTH_PATHS.GET_ME,
+				),
+			);
 		}
 		const result = await this.authService.getMe(req.user?.email);
 		if (!result) {
