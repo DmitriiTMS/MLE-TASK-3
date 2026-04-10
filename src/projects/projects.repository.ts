@@ -21,6 +21,12 @@ export class ProjectsRepository implements IProjectsRepository {
         })
     }
 
+    async findById(projectId: number): Promise<ProjectModel | null> {
+        return this.prismaService.client.projectModel.findUnique({
+            where: { id: projectId },
+        });
+    }
+
     async create(data: IProjectRequestModel): Promise<ProjectModel> {
         try {
             return await this.prismaService.client.projectModel.create({

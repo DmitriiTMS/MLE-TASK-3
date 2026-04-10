@@ -7,6 +7,7 @@ import { IControllerRoute } from './route.interface';
 import { HttpCodeSuccessful } from './constants';
 
 
+
 @injectable()
 export abstract class BaseController {
 	private readonly _router: Router;
@@ -53,4 +54,5 @@ export abstract class BaseController {
 			this.router[route.method](route.path, pipeline);
 		}
 	}
+
 }

@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, jest } from '@jest/globals';
 import { App } from '../../src/app';
 import { boot } from '../../src/main';
 import { PrismaService } from '../../src/common/database/prisma.service';
 import { ILogger } from '../../src/common/logger/logger.interface';
 import request from 'supertest';
+import { BASE_PROJECTS_PATH, PROJECTS_PATH } from '../../src/projects/constants';
+import { AUTH_PATHS, BASE_AUTH_PATH } from '../../src/auth/constants';
 
 // npm run test:e2e -- tests/projects/projects.e2e.ts
 
@@ -39,12 +41,6 @@ describe('ProjectsController', () => {
         const { app } = await boot;
         application = app;
 
-        const registerResponse = await request(application.app)
-            .post('/api/auth/register')
-            .send(testUser);
-
-        authToken = registerResponse.body.accessToken;
-        userId = registerResponse.body.id;
     });
 
     afterAll(async () => {
@@ -56,21 +52,35 @@ describe('ProjectsController', () => {
         }
     });
 
-    beforeEach(async () => {
+
+
+    afterEach(async () => {
         await prismaService.client.projectModel.deleteMany();
+        await prismaService.client.userModel.deleteMany();
     });
 
-    describe('POST /api/projects', () => {
+    describe(`POST ${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE} - create`, () => {
+
+        beforeEach(async () => {
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+        });
 
         it('should create a new project with valid data', async () => {
-
             const response = await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(validProject)
                 .expect(201);
 
-            expect(response.body).toEqual({});
+            expect(response.body).toHaveProperty('projectId');
+            expect(typeof response.body.projectId).toBe('number');
+
+            expect(response.body.projectId).toBeGreaterThan(0);
 
             const project = await prismaService.client.projectModel.findFirst({
                 where: {
@@ -81,6 +91,7 @@ describe('ProjectsController', () => {
 
             expect(project).toBeDefined();
             expect(project?.name).toBe(validProject.name);
+            expect(project?.id).toBe(response.body.projectId);
         });
 
         it('should create project without description', async () => {
@@ -89,12 +100,14 @@ describe('ProjectsController', () => {
             };
 
             const response = await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(projectWithoutDesc)
                 .expect(201);
 
-            expect(response.body).toEqual({});
+            expect(response.body).toHaveProperty('projectId');
+            expect(typeof response.body.projectId).toBe('number');
+            expect(response.body.projectId).toBeGreaterThan(0);
 
             const project = await prismaService.client.projectModel.findFirst({
                 where: {
@@ -105,18 +118,19 @@ describe('ProjectsController', () => {
 
             expect(project).toBeDefined();
             expect(project?.description).toBeNull();
+            expect(project?.id).toBe(response.body.projectId);
         });
 
         it('should return 401 when no authorization token provided', async () => {
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .send(validProject)
                 .expect(401);
         });
 
         it('should return 401 when invalid token provided', async () => {
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', 'Bearer invalid-token')
                 .send(validProject)
                 .expect(401);
@@ -128,7 +142,7 @@ describe('ProjectsController', () => {
             };
 
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(invalidProject)
                 .expect(400);
@@ -141,23 +155,31 @@ describe('ProjectsController', () => {
             };
 
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(invalidProject)
                 .expect(400);
         });
     });
 
-    describe('GET /api/projects/user - getAllProjectsByUserId', () => {
+    describe(`GET ${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID} - getAllProjectsByUserId`, () => {
+        beforeEach(async () => {
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+        });
         it('should return 401 when no token provided', async () => {
             await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .expect(401);
         });
 
         it('should return empty array when user has no projects', async () => {
             const response = await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(200);
 
@@ -166,7 +188,7 @@ describe('ProjectsController', () => {
 
         it('should return projects when user has projects', async () => {
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'Project 1',
@@ -175,7 +197,7 @@ describe('ProjectsController', () => {
                 .expect(201);
 
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'Project 2',
@@ -184,7 +206,7 @@ describe('ProjectsController', () => {
                 .expect(201);
 
             const response = await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(200);
 
@@ -192,7 +214,7 @@ describe('ProjectsController', () => {
             expect(response.body[0]).toHaveProperty('id');
             expect(response.body[0]).toHaveProperty('name');
             expect(response.body[0]).toHaveProperty('description');
-       
+
             expect(response.body[0].name).toBe('Project 1');
             expect(response.body[1].name).toBe('Project 2');
         });
@@ -200,7 +222,7 @@ describe('ProjectsController', () => {
         it('should return only user\'s own projects (not other users\' projects)', async () => {
 
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'User 1 Project',
@@ -210,7 +232,7 @@ describe('ProjectsController', () => {
 
 
             const secondUserRegister = await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send({
                     name: 'User 2',
                     email: 'user2@example.com',
@@ -220,7 +242,7 @@ describe('ProjectsController', () => {
             const secondUserToken = secondUserRegister.body.accessToken;
 
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${secondUserToken}`)
                 .send({
                     name: 'User 2 Project',
@@ -230,7 +252,7 @@ describe('ProjectsController', () => {
 
 
             const response = await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(200);
 
@@ -241,7 +263,7 @@ describe('ProjectsController', () => {
         it('should return projects with correct structure', async () => {
 
             await request(application.app)
-                .post('/api/projects')
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'Test Project',
@@ -250,7 +272,7 @@ describe('ProjectsController', () => {
                 .expect(201);
 
             const response = await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(200);
 
@@ -263,17 +285,125 @@ describe('ProjectsController', () => {
 
         it('should return 401 with invalid token', async () => {
             await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', 'Bearer invalid-token')
                 .expect(401);
         });
 
         it('should return 401 with malformed token', async () => {
             await request(application.app)
-                .get('/api/projects/user')
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', 'WrongScheme token')
                 .expect(401);
         });
 
     })
+
+    describe(`GET ${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_PROJECT_BY_USER_ID} - getProjectByUserId`, () => {
+
+        let projectId: number;
+
+        beforeEach(async () => {
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Test Project',
+                    description: 'Test Description',
+                });
+
+            projectId = projectResponse.body.projectId;
+            console.log('Project created with ID:', projectId);
+        });
+
+        it('should return project by id for owner', async () => {
+            const response = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('id', projectId);
+            expect(response.body).toHaveProperty('name', 'Test Project');
+            expect(response.body).toHaveProperty('description', 'Test Description');
+        });
+
+        it('should return 401 when no token provided', async () => {
+            await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .expect(401);
+        });
+
+        it('should return 404 when project does not exist', async () => {
+            const nonExistentId = 99999;
+
+            const response = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/${nonExistentId}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(404);
+            expect(response.body).toHaveProperty('message');
+        });
+
+        it('should return 403 when user tries to access someone else\'s project', async () => {
+            const secondUserRegister = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send({
+                    name: 'User 2',
+                    email: 'user2@example.com',
+                    password: 'password123',
+                });
+
+            const secondUserToken = secondUserRegister.body.accessToken;
+
+            const secondProjectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${secondUserToken}`)
+                .send({
+                    name: 'Second User Project',
+                    description: 'Second Description',
+                });
+
+            const secondProjectId = secondProjectResponse.body.projectId;
+
+            const response = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/${secondProjectId}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('message');
+        });
+
+        it('should return 400 when projectId is not a number', async () => {
+            const response = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/invalid-id`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('errors');
+            expect(response.body.errors[0].field).toBe('projectId');
+        });
+
+        it('should return correct project structure', async () => {
+            const response = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                id: expect.any(Number),
+                name: expect.any(String),
+                description: expect.any(String),
+            });
+            expect(response.body.id).toBe(projectId);
+            expect(response.body.name).toBe('Test Project');
+            expect(response.body.description).toBe('Test Description');
+        });
+    });
 });

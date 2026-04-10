@@ -4,6 +4,7 @@ import { boot } from '../../src/main';
 import { PrismaService } from '../../src/common/database/prisma.service';
 import { ILogger } from '../../src/common/logger/logger.interface';
 import request from 'supertest';
+import { AUTH_PATHS, BASE_AUTH_PATH } from '../../src/auth/constants';
 
 // npm run test:e2e -- tests/auth/auth.e2e.ts
 
@@ -40,7 +41,7 @@ describe('AuthController', () => {
         await prismaService.client.userModel.deleteMany();
     });
 
-    describe('POST /auth/register', () => {
+    describe(`POST ${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`, () => {
         const testUser = {
             name: 'user',
             email: 'user@bk.ru',
@@ -49,7 +50,7 @@ describe('AuthController', () => {
 
         it('should successfully register a new user', async () => {
             const response = await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser)
                 .expect(201);
 
@@ -75,12 +76,12 @@ describe('AuthController', () => {
 
         it('should return 409 if user already exists', async () => {
             await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser)
                 .expect(201);
 
             await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser)
                 .expect(409);
         });
@@ -93,7 +94,7 @@ describe('AuthController', () => {
             };
 
             await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(invalidUser)
                 .expect(400);
         });
@@ -105,13 +106,13 @@ describe('AuthController', () => {
             };
 
             await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(invalidUser)
                 .expect(400);
         });
     });
 
-    describe('POST /auth/login', () => {
+    describe(`POST ${BASE_AUTH_PATH}${AUTH_PATHS.LOGIN}`, () => {
         const testUser = {
             name: 'user',
             email: 'user@bk.ru',
@@ -120,13 +121,13 @@ describe('AuthController', () => {
 
         beforeEach(async () => {
             await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser);
         });
 
         it('should successfully login with valid credentials', async () => {
             const response = await request(application.app)
-                .post('/api/auth/login')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.LOGIN}`)
                 .send({
                     email: testUser.email,
                     password: testUser.password
@@ -144,7 +145,7 @@ describe('AuthController', () => {
 
         it('should return 401 with wrong password', async () => {
             await request(application.app)
-                .post('/api/auth/login')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.LOGIN}`)
                 .send({
                     email: testUser.email,
                     password: 'wrongpassword'
@@ -154,7 +155,7 @@ describe('AuthController', () => {
 
         it('should return 401 with non-existent email', async () => {
             await request(application.app)
-                .post('/api/auth/login')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.LOGIN}`)
                 .send({
                     email: 'nonexistent@example.com',
                     password: '1234'
@@ -164,7 +165,7 @@ describe('AuthController', () => {
 
         it('should return 400 with invalid email format', async () => {
             await request(application.app)
-                .post('/api/auth/login')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.LOGIN}`)
                 .send({
                     email: 'invalid-email',
                     password: testUser.password
@@ -173,7 +174,7 @@ describe('AuthController', () => {
         });
     });
 
-    describe('POST /auth/refresh', () => {
+    describe(`POST ${BASE_AUTH_PATH}${AUTH_PATHS.REFRESH_TOKEN}`, () => {
         const testUser = {
             name: 'user',
             email: 'user@bk.ru',
@@ -183,7 +184,7 @@ describe('AuthController', () => {
 
         beforeEach(async () => {
             const response = await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser);
 
             const cookies = response.headers['set-cookie'];
@@ -194,7 +195,7 @@ describe('AuthController', () => {
 
         it('should successfully refresh tokens', async () => {
             const response = await request(application.app)
-                .post('/api/auth/refresh-token')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REFRESH_TOKEN}`)
                 .set('Cookie', [`refreshToken=${refreshToken}`])
                 .expect(200);
 
@@ -208,20 +209,20 @@ describe('AuthController', () => {
 
         it('should return 401 with missing refresh token', async () => {
             await request(application.app)
-                .post('/api/auth/refresh-token')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REFRESH_TOKEN}`)
                 .expect(401);
         });
 
         it('should return 4981 with invalid refresh token', async () => {
 
             await request(application.app)
-                .post('/api/auth/refresh-token')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REFRESH_TOKEN}`)
                 .set('Cookie', ['refreshToken=invalid-token'])
                 .expect(498);
         });
     });
 
-    describe('GET /auth/get-me', () => {
+    describe(`GET ${BASE_AUTH_PATH}${AUTH_PATHS.GET_ME}`, () => {
         const testUser = {
             name: 'user',
             email: 'user@bk.ru',
@@ -231,7 +232,7 @@ describe('AuthController', () => {
 
         beforeEach(async () => {
             const response = await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser);
 
             accessToken = response.body.accessToken;
@@ -239,7 +240,7 @@ describe('AuthController', () => {
 
         it('should return user info with valid token', async () => {
             const response = await request(application.app)
-                .get('/api/auth/get-me')
+                .get(`${BASE_AUTH_PATH}${AUTH_PATHS.GET_ME}`)
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -249,19 +250,19 @@ describe('AuthController', () => {
 
         it('should return 401 with missing token', async () => {
             await request(application.app)
-                .get('/api/auth/get-me')
+                .get(`${BASE_AUTH_PATH}${AUTH_PATHS.GET_ME}`)
                 .expect(401);
         });
 
         it('should return 401 with invalid token', async () => {
             await request(application.app)
-                .get('/api/auth/get-me')
+                .get(`${BASE_AUTH_PATH}${AUTH_PATHS.GET_ME}`)
                 .set('Authorization', 'Bearer invalid-token')
                 .expect(401);
         });
     });
 
-    describe('POST /auth/logout', () => {
+    describe(`POST ${BASE_AUTH_PATH}${AUTH_PATHS.LOGOUT}`, () => {
         const testUser = {
             name: 'user',
             email: 'user@bk.ru',
@@ -272,7 +273,7 @@ describe('AuthController', () => {
 
         beforeEach(async () => {
             const response = await request(application.app)
-                .post('/api/auth/register')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser);
 
             accessToken = response.body.accessToken;
@@ -284,7 +285,7 @@ describe('AuthController', () => {
 
         it('should successfully logout and clear cookies', async () => {
             const response = await request(application.app)
-                .post('/api/auth/logout')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.LOGOUT}`)
                 .set('Authorization', `Bearer ${accessToken}`)
                 .set('Cookie', [`refreshToken=${refreshToken}`])
                 .expect(200);
@@ -299,7 +300,7 @@ describe('AuthController', () => {
 
         it('should still work without authentication', async () => {
             const response = await request(application.app)
-                .post('/api/auth/logout')
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.LOGOUT}`)
                 .expect(200);
 
             expect(response.body).toHaveProperty('message');

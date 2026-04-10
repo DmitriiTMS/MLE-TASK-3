@@ -19,20 +19,46 @@ export class ProjectsService implements IProjectsService {
     ) { }
 
     async getAllProjectsByUserId(userId: number): Promise<ProjectEntity[]> {
-        await this.userService.getUserOrThrow(userId, PROJECTS_PATH.GET_ALL_BY_USER_ID);
+        await this.userService.getUserOrThrow(userId, PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID);
         const result = await this.projectsRepository.getAllProjectsByUserId(userId);
         return result.map(project => ProjectEntity.fromDatabase(project))
     }
 
-    async create({ name, description }: CreateProjectsDto, userId: number): Promise<void> {
+    async getProjectByUserId(projectId: number, userId: number): Promise<ProjectEntity> {
+        await this.userService.getUserOrThrow(userId, PROJECTS_PATH.GET_PROJECT_BY_USER_ID);
+
+        const projectData = await this.projectsRepository.findById(projectId);
+        if (!projectData) {
+            throw new HttpError(
+                HttpErrorCode.NOT_FOUND,
+                HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+                PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+            );
+        }
+
+        const project = ProjectEntity.fromDatabase(projectData);
+
+        if (!project.isOwnedBy(userId)) {
+            throw new HttpError(
+                HttpErrorCode.FORBIDDEN,
+                HttpErrorMessages[HttpErrorCode.FORBIDDEN],
+                PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+            );
+        }
+
+        return project;
+    }
+
+    async create({ name, description }: CreateProjectsDto, userId: number): Promise<ProjectEntity> {
         await this.userService.getUserOrThrow(userId, PROJECTS_PATH.CREATE);
         try {
             const createdProject = new ProjectEntity(name, userId, description);
-            await this.projectsRepository.create({
+            const project = await this.projectsRepository.create({
                 name: createdProject.name,
                 description: createdProject.description,
                 userId: createdProject.userId
             });
+            return ProjectEntity.fromDatabase(project)
         } catch (error) {
             throw new HttpError(
                 HttpErrorCode.INTERNAL_SERVER_ERROR,

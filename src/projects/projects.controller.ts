@@ -14,6 +14,7 @@ import { ProjectsService } from './projects.service';
 import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { ProjectEntity } from './entity/project.entity';
+import { ProjectIdDto } from './dto/projectId.dto';
 
 @injectable()
 export class ProjectsController extends BaseController implements IProjectsController {
@@ -26,11 +27,20 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		this.basePath = BASE_PROJECTS_PATH;
 		this.bindRoutes([
 			{
-				path: PROJECTS_PATH.GET_ALL_BY_USER_ID,
+				path: PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID,
 				method: 'get',
 				func: this.getAllProjectsByUserId,
 				middlewares: [
 					new AuthMiddleware(this.jwtService, logger),
+				],
+			},
+			{
+				path: PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+				method: 'get',
+				func: this.getProjectByUserId,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, ProjectIdDto, 'params'),
 				],
 			},
 			{
@@ -66,12 +76,13 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		this.ok(res, response);
 	}
 
-	async create(
-		req: Request<object, object, CreateProjectsDto>,
+	async getProjectByUserId(
+		req: Request<{ projectId: string }, object, object>,
 		res: Response,
 		next: NextFunction,
-	): Promise<void> {
-		const { name, description } = req.body;
+	) {
+		const projectId = parseInt(req.params.projectId);
+
 		if (!req.user?.userId) {
 			return next(
 				new HttpError(
@@ -82,7 +93,29 @@ export class ProjectsController extends BaseController implements IProjectsContr
 			);
 		}
 		const { userId } = req.user;
-		await this.projectsService.create({ name, description }, userId)
-		this.created(res, {});
+		const project = await this.projectsService.getProjectByUserId(projectId, userId);
+
+		this.ok(res, project.toResponse());
+	}
+
+	async create(
+		req: Request<object, object, CreateProjectsDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		const { name, description } = req.body;
+
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					PROJECTS_PATH.CREATE,
+				),
+			);
+		}
+		const { userId } = req.user;
+		const project = await this.projectsService.create({ name, description }, userId)
+		this.created(res, { projectId: project.id });
 	}
 }
