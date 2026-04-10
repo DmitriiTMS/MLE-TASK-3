@@ -13,6 +13,7 @@ import { AuthMiddleware } from '../auth/middleware/auth.middleware';
 import { ProjectsService } from './projects.service';
 import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
+import { ProjectEntity } from './entity/project.entity';
 
 @injectable()
 export class ProjectsController extends BaseController implements IProjectsController {
@@ -25,6 +26,14 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		this.basePath = BASE_PROJECTS_PATH;
 		this.bindRoutes([
 			{
+				path: PROJECTS_PATH.GET_ALL_BY_USER_ID,
+				method: 'get',
+				func: this.getAllProjectsByUserId,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+				],
+			},
+			{
 				path: PROJECTS_PATH.CREATE,
 				method: 'post',
 				func: this.create,
@@ -33,7 +42,28 @@ export class ProjectsController extends BaseController implements IProjectsContr
 					new ValidateMiddleware(logger, CreateProjectsDto),
 				],
 			},
+
 		]);
+	}
+
+	async getAllProjectsByUserId(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	) {
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					PROJECTS_PATH.CREATE,
+				),
+			);
+		}
+		const { userId } = req.user;
+		const projects: ProjectEntity[] = await this.projectsService.getAllProjectsByUserId(userId)
+		const response = projects.map(project => project.toResponse());
+		this.ok(res, response);
 	}
 
 	async create(
@@ -53,6 +83,6 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		}
 		const { userId } = req.user;
 		await this.projectsService.create({ name, description }, userId)
-		this.ok(res, { message: 'Project created' });
+		this.created(res, {});
 	}
 }

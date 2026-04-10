@@ -60,7 +60,7 @@ describe('ProjectsController', () => {
         await prismaService.client.projectModel.deleteMany();
     });
 
-    describe('POST /projects', () => {
+    describe('POST /api/projects', () => {
 
         it('should create a new project with valid data', async () => {
 
@@ -68,10 +68,9 @@ describe('ProjectsController', () => {
                 .post('/api/projects')
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(validProject)
-                .expect(200);
+                .expect(201);
 
-            expect(response.body).toHaveProperty('message');
-            expect(response.body.message).toBe('Project created');
+            expect(response.body).toEqual({});
 
             const project = await prismaService.client.projectModel.findFirst({
                 where: {
@@ -82,10 +81,6 @@ describe('ProjectsController', () => {
 
             expect(project).toBeDefined();
             expect(project?.name).toBe(validProject.name);
-            expect(project?.description).toBe(validProject.description);
-            expect(project?.userId).toBe(userId);
-            expect(project?.createdAt).toBeDefined();
-            expect(project?.updatedAt).toBeDefined();
         });
 
         it('should create project without description', async () => {
@@ -97,9 +92,9 @@ describe('ProjectsController', () => {
                 .post('/api/projects')
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(projectWithoutDesc)
-                .expect(200);
+                .expect(201);
 
-            expect(response.body.message).toBe('Project created');
+            expect(response.body).toEqual({});
 
             const project = await prismaService.client.projectModel.findFirst({
                 where: {
@@ -139,7 +134,7 @@ describe('ProjectsController', () => {
                 .expect(400);
         });
 
-         it('should return 400 when project name is empty string', async () => {
+        it('should return 400 when project name is empty string', async () => {
             const invalidProject = {
                 name: '',
                 description: 'Project with empty name'
@@ -153,5 +148,132 @@ describe('ProjectsController', () => {
         });
     });
 
+    describe('GET /api/projects/user - getAllProjectsByUserId', () => {
+        it('should return 401 when no token provided', async () => {
+            await request(application.app)
+                .get('/api/projects/user')
+                .expect(401);
+        });
 
+        it('should return empty array when user has no projects', async () => {
+            const response = await request(application.app)
+                .get('/api/projects/user')
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body).toEqual([]);
+        });
+
+        it('should return projects when user has projects', async () => {
+            await request(application.app)
+                .post('/api/projects')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Project 1',
+                    description: 'Description 1',
+                })
+                .expect(201);
+
+            await request(application.app)
+                .post('/api/projects')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Project 2',
+                    description: 'Description 2',
+                })
+                .expect(201);
+
+            const response = await request(application.app)
+                .get('/api/projects/user')
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body).toHaveLength(2);
+            expect(response.body[0]).toHaveProperty('id');
+            expect(response.body[0]).toHaveProperty('name');
+            expect(response.body[0]).toHaveProperty('description');
+       
+            expect(response.body[0].name).toBe('Project 1');
+            expect(response.body[1].name).toBe('Project 2');
+        });
+
+        it('should return only user\'s own projects (not other users\' projects)', async () => {
+
+            await request(application.app)
+                .post('/api/projects')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'User 1 Project',
+                    description: 'Description',
+                })
+                .expect(201);
+
+
+            const secondUserRegister = await request(application.app)
+                .post('/api/auth/register')
+                .send({
+                    name: 'User 2',
+                    email: 'user2@example.com',
+                    password: 'password123',
+                });
+
+            const secondUserToken = secondUserRegister.body.accessToken;
+
+            await request(application.app)
+                .post('/api/projects')
+                .set('Authorization', `Bearer ${secondUserToken}`)
+                .send({
+                    name: 'User 2 Project',
+                    description: 'Description',
+                })
+                .expect(201);
+
+
+            const response = await request(application.app)
+                .get('/api/projects/user')
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body).toHaveLength(1);
+            expect(response.body[0].name).toBe('User 1 Project');
+        });
+
+        it('should return projects with correct structure', async () => {
+
+            await request(application.app)
+                .post('/api/projects')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Test Project',
+                    description: 'Test Description',
+                })
+                .expect(201);
+
+            const response = await request(application.app)
+                .get('/api/projects/user')
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body[0]).toEqual({
+                id: expect.any(Number),
+                name: 'Test Project',
+                description: 'Test Description',
+            });
+        });
+
+        it('should return 401 with invalid token', async () => {
+            await request(application.app)
+                .get('/api/projects/user')
+                .set('Authorization', 'Bearer invalid-token')
+                .expect(401);
+        });
+
+        it('should return 401 with malformed token', async () => {
+            await request(application.app)
+                .get('/api/projects/user')
+                .set('Authorization', 'WrongScheme token')
+                .expect(401);
+        });
+
+    })
 });

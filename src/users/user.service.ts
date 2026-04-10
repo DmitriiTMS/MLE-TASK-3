@@ -28,4 +28,16 @@ export class UserService implements IUserService {
 			);
 		}
 	}
+
+	async getUserOrThrow(userId: number, errorPath?: string) {
+		const user = await this.userRepository.findById(userId);
+		if (!user) {
+			throw new HttpError(
+				HttpErrorCode.NOT_FOUND,
+				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+				errorPath
+			);
+		}
+		return user;
+	}
 }

@@ -3,4 +3,5 @@ import { IProjectRequestModel } from "./types";
 
 export interface IProjectsRepository {
     create(project: IProjectRequestModel): Promise<ProjectModel>;
+    getAllProjectsByUserId(userId: number): Promise<ProjectModel[]>;
 }

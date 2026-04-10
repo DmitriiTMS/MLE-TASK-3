@@ -212,7 +212,7 @@ describe('AuthController', () => {
                 .expect(401);
         });
 
-        it('should return 498 with invalid refresh token', async () => {
+        it('should return 4981 with invalid refresh token', async () => {
 
             await request(application.app)
                 .post('/api/auth/refresh-token')

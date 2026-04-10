@@ -1,7 +1,7 @@
-import { IProjectResponse } from "../types";
+import { IProjectDatabaseData, IProjectResponse } from "../types";
 
 export class ProjectEntity {
-    private _id!: number;
+    private _id: number;
     private _name: string;
     private _userId: number;
     private _description?: string | null;
@@ -23,7 +23,7 @@ export class ProjectEntity {
     get createdAt() { return this._createdAt; }
     get updatedAt() { return this._updatedAt; }
 
-    static fromDatabase(data: IProjectResponse): ProjectEntity {
+    static fromDatabase(data: IProjectDatabaseData): ProjectEntity {
         const entity = new ProjectEntity(data.name, data.userId, data.description);
         entity._id = data.id;
         entity._createdAt = data.createdAt;
@@ -31,14 +31,15 @@ export class ProjectEntity {
         return entity;
     }
 
+    isOwnedBy(userId: number): boolean {
+        return this._userId === userId;
+    }
+
     toResponse(): IProjectResponse {
         return {
             id: this._id,
             name: this._name,
             description: this._description,
-            userId: this._userId,
-            createdAt: this._createdAt,
-            updatedAt: this._updatedAt,
         };
     }
 }

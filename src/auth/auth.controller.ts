@@ -91,7 +91,7 @@ export class AuthController extends BaseController implements IAuthController {
 			return next(
 				new HttpError(
 					HttpErrorCode.UNAUTHORIZED,
-					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					'Ошибка авторизации',
 					AUTH_PATHS.LOGIN,
 				),
 			);

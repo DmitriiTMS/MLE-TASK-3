@@ -18,6 +18,7 @@ import { TYPES } from '../common/types/types';
 
 const UserServiceMock = {
 	createUser: jest.fn(),
+	getUserOrThrow: jest.fn(),
 } as jest.Mocked<IUserService>;
 
 const PasswordHasherMock = {

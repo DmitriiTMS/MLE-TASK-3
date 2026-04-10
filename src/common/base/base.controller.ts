@@ -28,19 +28,19 @@ export abstract class BaseController {
 		this._basePath = path;
 	}
 
-	public send<T>(res: Response, code: number, message: T): Response<T> {
+	public send<T>(res: Response, code: number, data: T): Response<T> {
 		res.type('application/json');
-		return res.status(code).json(message) as Response<T>;
+		return res.status(code).json(data) as Response<T>;
 	}
 
-	public created<T>(res: Response, message: T): Response<T> {
-		this.logger.log(message)
-		return this.send(res, HttpCodeSuccessful.CREATED, message);
+	public created<T>(res: Response, data: T): Response<T> {
+		this.logger.log('created')
+		return this.send(res, HttpCodeSuccessful.CREATED, data);
 	}
 
-	public ok<T>(res: Response, message: T): Response<T> {
-		this.logger.log(message)
-		return this.send(res, HttpCodeSuccessful.OK, message);
+	public ok<T>(res: Response, data: T): Response<T> {
+		this.logger.log('ok')
+		return this.send(res, HttpCodeSuccessful.OK, data);
 	}
 
 	protected bindRoutes(routes: IControllerRoute[]): void {
