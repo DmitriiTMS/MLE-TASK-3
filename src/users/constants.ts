@@ -1,3 +1,3 @@
 export const USER_PATHS = {
-    CREATE: `/user`,
+	CREATE: `/user`,
 } as const;

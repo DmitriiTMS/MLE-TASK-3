@@ -235,11 +235,11 @@ describe('AuthService', () => {
 			refreshToken: 'new-refresh-token',
 		};
 
-		it('should successfully refresh tokens', async () => {
+		it('should successfully refresh tokens', () => {
 			JwtServiceMock.verifyRefreshToken.mockReturnValue(decodedToken);
 			JwtServiceMock.refreshTokens.mockReturnValue(newTokens);
 
-			const result = await authService.refreshTokens(refreshToken);
+			const result = authService.refreshTokens(refreshToken);
 
 			expect(JwtServiceMock.verifyRefreshToken).toHaveBeenCalledWith(refreshToken);
 			expect(JwtServiceMock.refreshTokens).toHaveBeenCalledWith(refreshToken);
@@ -250,10 +250,10 @@ describe('AuthService', () => {
 			expect(result).toEqual(newTokens);
 		});
 
-		it('should return null and log error if refresh token is invalid', async () => {
+		it('should return null and log error if refresh token is invalid', () => {
 			JwtServiceMock.verifyRefreshToken.mockReturnValue(null);
 
-			const result = await authService.refreshTokens(refreshToken);
+			const result = authService.refreshTokens(refreshToken);
 
 			expect(JwtServiceMock.verifyRefreshToken).toHaveBeenCalledWith(refreshToken);
 			expect(LoggerMock.error).toHaveBeenCalledWith('Invalid refresh token');
@@ -261,11 +261,11 @@ describe('AuthService', () => {
 			expect(result).toBeNull();
 		});
 
-		it('should return null if refreshTokens returns null', async () => {
+		it('should return null if refreshTokens returns null', () => {
 			JwtServiceMock.verifyRefreshToken.mockReturnValue(decodedToken);
 			JwtServiceMock.refreshTokens.mockReturnValue(null);
 
-			const result = await authService.refreshTokens(refreshToken);
+			const result = authService.refreshTokens(refreshToken);
 
 			expect(JwtServiceMock.verifyRefreshToken).toHaveBeenCalledWith(refreshToken);
 			expect(JwtServiceMock.refreshTokens).toHaveBeenCalledWith(refreshToken);

@@ -406,4 +406,285 @@ describe('ProjectsController', () => {
             expect(response.body.description).toBe('Test Description');
         });
     });
+
+    describe(`DELETE ${BASE_PROJECTS_PATH}${PROJECTS_PATH.REMOVE_PROJECT} - remove`, () => {
+        let projectId: number;
+
+        beforeEach(async () => {
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Project To Delete',
+                    description: 'This project will be deleted',
+                });
+
+            projectId = projectResponse.body.projectId;
+        });
+
+        it('should successfully delete project when user is owner', async () => {
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const deletedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(deletedProject).toBeNull();
+        });
+
+        it('should return 401 when no authorization token provided', async () => {
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .expect(401);
+        });
+
+        it('should return 401 when invalid token provided', async () => {
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', 'Bearer invalid-token')
+                .expect(401);
+        });
+
+        it('should return 401 with malformed token', async () => {
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', 'WrongScheme token')
+                .expect(401);
+        });
+
+        it('should return 404 when project does not exist', async () => {
+            const nonExistentId = 99999;
+
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${nonExistentId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+
+            expect(response.body).toHaveProperty('message');
+            expect(response.body.message).toBe('Ресурс не найден');
+        });
+
+        it('should return 403 when user tries to delete someone else\'s project', async () => {
+            const secondUserRegister = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send({
+                    name: 'User 2',
+                    email: 'user2@example.com',
+                    password: 'password123',
+                });
+
+            const secondUserToken = secondUserRegister.body.accessToken;
+            const secondUserId = secondUserRegister.body.id;
+
+            const secondProjectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${secondUserToken}`)
+                .send({
+                    name: 'Second User Project',
+                    description: 'Second Description',
+                });
+
+            const secondProjectId = secondProjectResponse.body.projectId;
+
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${secondProjectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message');
+            expect(response.body.message).toBe('Доступ запрещен');
+
+            const projectStillExists = await prismaService.client.projectModel.findFirst({
+                where: { id: secondProjectId }
+            });
+
+            expect(projectStillExists).toBeDefined();
+            expect(projectStillExists?.id).toBe(secondProjectId);
+        });
+
+        it('should return 400 when projectId is not a number', async () => {
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/invalid-id`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('errors');
+            expect(response.body.errors[0].field).toBe('projectId');
+        });
+
+        it('should return 400 when projectId is empty', async () => {
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+        });
+
+        it('should return 204 with empty body on successful deletion', async () => {
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            expect(response.text).toBe('');
+        });
+
+        it('should delete project with null description', async () => {
+            const projectWithoutDescResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Project Without Description',
+                });
+
+            const projectWithoutDescId = projectWithoutDescResponse.body.projectId;
+
+            const projectBeforeDelete = await prismaService.client.projectModel.findFirst({
+                where: { id: projectWithoutDescId }
+            });
+
+            expect(projectBeforeDelete).toBeDefined();
+            expect(projectBeforeDelete?.description).toBeNull();
+
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectWithoutDescId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            const projectAfterDelete = await prismaService.client.projectModel.findFirst({
+                where: { id: projectWithoutDescId }
+            });
+
+            expect(projectAfterDelete).toBeNull();
+        });
+
+        it('should allow deleting multiple projects sequentially', async () => {
+            const project1Response = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ name: 'Project 1' });
+
+            const project2Response = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ name: 'Project 2' });
+
+            const project1Id = project1Response.body.projectId;
+            const project2Id = project2Response.body.projectId;
+
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${project1Id}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            let deletedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: project1Id }
+            });
+            expect(deletedProject).toBeNull();
+
+            const remainingProject = await prismaService.client.projectModel.findFirst({
+                where: { id: project2Id }
+            });
+            expect(remainingProject).toBeDefined();
+            expect(remainingProject?.name).toBe('Project 2');
+
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${project2Id}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            deletedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: project2Id }
+            });
+            expect(deletedProject).toBeNull();
+        });
+
+        it('should not delete project if token belongs to different user', async () => {
+            const secondUserRegister = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send({
+                    name: 'Attacker User',
+                    email: 'attacker@example.com',
+                    password: 'password123',
+                });
+
+            const attackerToken = secondUserRegister.body.accessToken;
+
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${attackerToken}`)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message');
+
+            const projectStillExists = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(projectStillExists).toBeDefined();
+            expect(projectStillExists?.name).toBe('Project To Delete');
+        });
+
+        it('should handle deletion of already deleted project', async () => {
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+        });
+
+        it('should return 401 when user is not authenticated (no user object)', async () => {
+            const response = await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .expect(401);
+
+            expect(response.body).toHaveProperty('message');
+        });
+
+        it('should delete project and verify it no longer appears in GET requests', async () => {
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            const getAllResponse = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            const deletedProjectExists = getAllResponse.body.some(
+                (project: any) => project.id === projectId
+            );
+            expect(deletedProjectExists).toBe(false);
+        });
+
+        it('should delete project and verify it cannot be accessed by ID', async () => {
+            await request(application.app)
+                .delete(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+        });
+    });
 });

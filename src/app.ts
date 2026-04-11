@@ -39,7 +39,7 @@ export class App {
 		this.app.use(json());
 		this.app.use(urlencoded({ extended: true }));
 
-		this.app.use((req: Request, _res: Response, next: NextFunction) => {		
+		this.app.use((req: Request, _res: Response, next: NextFunction) => {
 			this.logger.log(`[${req.method}] ${req.path}`);
 			next();
 		});

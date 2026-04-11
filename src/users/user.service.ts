@@ -12,7 +12,7 @@ import { USER_PATHS } from './constants';
 
 @injectable()
 export class UserService implements IUserService {
-	constructor(@inject(TYPES.IUserRepository) private readonly userRepository: UserRepository) { }
+	constructor(@inject(TYPES.IUserRepository) private readonly userRepository: UserRepository) {}
 
 	async createUser(userDto: UserDto): Promise<UserModel | null> {
 		const { name, email, passwordHash } = userDto;
@@ -24,7 +24,7 @@ export class UserService implements IUserService {
 			throw new HttpError(
 				HttpErrorCode.INTERNAL_SERVER_ERROR,
 				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
-				USER_PATHS.CREATE
+				USER_PATHS.CREATE,
 			);
 		}
 	}
@@ -35,7 +35,7 @@ export class UserService implements IUserService {
 			throw new HttpError(
 				HttpErrorCode.NOT_FOUND,
 				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
-				errorPath
+				errorPath,
 			);
 		}
 		return user;

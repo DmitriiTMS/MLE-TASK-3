@@ -11,16 +11,15 @@ export class AuthMiddleware implements IMiddleware {
 	constructor(
 		@inject(TYPES.JwtService) private readonly jwtService: JwtService,
 		@inject(TYPES.ILogger) private readonly logger?: ILogger,
-
-	) { }
+	) {}
 
 	async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
 		const authHeader = req.headers.authorization;
 
 		if (!authHeader || !authHeader.startsWith('Bearer ')) {
-			const message = { message: 'Токен не передан' }
+			const message = { message: 'Токен не передан' };
 			res.status(401).json(message);
-			this.logger?.error(message)
+			this.logger?.error(message);
 			return;
 		}
 
@@ -28,9 +27,9 @@ export class AuthMiddleware implements IMiddleware {
 
 		const decoded = this.jwtService.verifyAccessToken(token);
 		if (!decoded) {
-			const message = { message: 'Не валидный токен' }
+			const message = { message: 'Не валидный токен' };
 			res.status(401).json(message);
-			this.logger?.error(message)
+			this.logger?.error(message);
 			return;
 		}
 

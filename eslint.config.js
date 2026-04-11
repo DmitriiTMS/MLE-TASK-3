@@ -35,6 +35,14 @@ module.exports = [
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/explicit-function-return-type': 'warn',
             '@typescript-eslint/no-unused-vars': 'off',
+            '@typescript-eslint/unbound-method': 'off',
+            '@typescript-eslint/no-misused-promises': [
+                'error',
+                {
+                    'checksVoidReturn': false,
+                    'checksConditionals': true,
+                }
+            ],
             'no-console': 'warn',
             'prettier/prettier': [
                 'error',

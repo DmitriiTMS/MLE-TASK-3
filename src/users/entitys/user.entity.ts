@@ -1,4 +1,3 @@
-
 export class UserEntity {
 	private _id!: number;
 	private _name: string;
@@ -14,13 +13,25 @@ export class UserEntity {
 		this._updatedAt = new Date();
 	}
 
-	get id(): number | undefined { return this._id; }
-	get name(): string { return this._name; }
-	get email(): string {return this._email;}
-	get passwordHash(): string {return this._passwordHash;}
-	get createdAt(): Date {return this._createdAt;}
-	get updatedAt(): Date {return this._updatedAt;}
-	
+	get id(): number | undefined {
+		return this._id;
+	}
+	get name(): string {
+		return this._name;
+	}
+	get email(): string {
+		return this._email;
+	}
+	get passwordHash(): string {
+		return this._passwordHash;
+	}
+	get createdAt(): Date {
+		return this._createdAt;
+	}
+	get updatedAt(): Date {
+		return this._updatedAt;
+	}
+
 	setPasswordHash(hash: string): void {
 		this._passwordHash = hash;
 	}

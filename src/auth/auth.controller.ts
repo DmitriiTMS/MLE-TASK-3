@@ -89,11 +89,7 @@ export class AuthController extends BaseController implements IAuthController {
 		const result = await this.authService.login(req.body);
 		if (!result) {
 			return next(
-				new HttpError(
-					HttpErrorCode.UNAUTHORIZED,
-					'Ошибка авторизации',
-					AUTH_PATHS.LOGIN,
-				),
+				new HttpError(HttpErrorCode.UNAUTHORIZED, 'Ошибка авторизации', AUTH_PATHS.LOGIN),
 			);
 		}
 		res.cookie('refreshToken', result.refreshToken, {
@@ -105,7 +101,7 @@ export class AuthController extends BaseController implements IAuthController {
 		this.ok(res, { id: result.id, accessToken: result.accessToken });
 	}
 
-	async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+	refresh(req: Request, res: Response, next: NextFunction): void {
 		const refreshToken = req.cookies.refreshToken;
 		if (!refreshToken) {
 			return next(
@@ -117,7 +113,7 @@ export class AuthController extends BaseController implements IAuthController {
 			);
 		}
 
-		const tokens = await this.authService.refreshTokens(refreshToken);
+		const tokens = this.authService.refreshTokens(refreshToken);
 
 		if (!tokens) {
 			return next(
@@ -139,7 +135,7 @@ export class AuthController extends BaseController implements IAuthController {
 		this.ok(res, { accessToken: tokens.accessToken });
 	}
 
-	async logout(_req: Request, res: Response): Promise<void> {
+	logout(_req: Request, res: Response): void {
 		res.clearCookie('refreshToken');
 		this.ok(res, { message: 'Logout successful' });
 	}

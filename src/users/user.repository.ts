@@ -8,7 +8,7 @@ import { PrismaService } from '../common/database/prisma.service';
 
 @injectable()
 export class UserRepository implements IUserRepository {
-	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) { }
+	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) {}
 
 	async create(user: UserEntity): Promise<UserModel> {
 		try {
@@ -22,7 +22,6 @@ export class UserRepository implements IUserRepository {
 		} catch (error) {
 			throw error;
 		}
-
 	}
 
 	async findByEmail(email: string): Promise<UserModel | null> {
@@ -36,5 +35,4 @@ export class UserRepository implements IUserRepository {
 			where: { id },
 		});
 	}
-
 }

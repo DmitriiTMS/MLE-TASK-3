@@ -6,8 +6,6 @@ import { Router, Response } from 'express';
 import { IControllerRoute } from './route.interface';
 import { HttpCodeSuccessful } from './constants';
 
-
-
 @injectable()
 export abstract class BaseController {
 	private readonly _router: Router;
@@ -35,13 +33,18 @@ export abstract class BaseController {
 	}
 
 	public created<T>(res: Response, data: T): Response<T> {
-		this.logger.log('created')
+		this.logger.log('created');
 		return this.send(res, HttpCodeSuccessful.CREATED, data);
 	}
 
 	public ok<T>(res: Response, data: T): Response<T> {
-		this.logger.log('ok')
+		this.logger.log('ok');
 		return this.send(res, HttpCodeSuccessful.OK, data);
+	}
+
+	public noContent<T>(res: Response, data: T): Response<T> {
+		this.logger.log('no content');
+		return this.send(res, HttpCodeSuccessful.NO_CONTENT, data);
 	}
 
 	protected bindRoutes(routes: IControllerRoute[]): void {
@@ -54,5 +57,4 @@ export abstract class BaseController {
 			this.router[route.method](route.path, pipeline);
 		}
 	}
-
 }
