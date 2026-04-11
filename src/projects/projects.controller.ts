@@ -15,6 +15,7 @@ import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { ProjectEntity } from './entity/project.entity';
 import { ProjectIdDto } from './dto/projectId.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 
 @injectable()
 export class ProjectsController extends BaseController implements IProjectsController {
@@ -48,6 +49,16 @@ export class ProjectsController extends BaseController implements IProjectsContr
 				middlewares: [
 					new AuthMiddleware(this.jwtService, logger),
 					new ValidateMiddleware(logger, CreateProjectsDto),
+				],
+			},
+			{
+				path: PROJECTS_PATH.UPDATE_PROJECT,
+				method: 'patch',
+				func: this.update,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, ProjectIdDto, 'params'),
+					new ValidateMiddleware(logger, UpdateProjectDto),
 				],
 			},
 			{
@@ -121,11 +132,31 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		this.created(res, { projectId: project.id });
 	}
 
+	async update(
+		req: Request<{ projectId: string }, object, UpdateProjectDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					PROJECTS_PATH.UPDATE_PROJECT,
+				),
+			);
+		}
+		const { userId } = req.user;
+		const projectId = parseInt(req.params.projectId);
+		await this.projectsService.update(userId, projectId, req.body);
+		this.noContent(res, {});
+	}
+
 	async remove(
 		req: Request<{ projectId: string }, object, object>,
 		res: Response,
 		next: NextFunction,
-	) {
+	): Promise<void> {
 		if (!req.user?.userId) {
 			return next(
 				new HttpError(

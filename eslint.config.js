@@ -1,4 +1,3 @@
-// eslint.config.cjs
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsparser = require('@typescript-eslint/parser');
 const prettier = require('eslint-plugin-prettier');
@@ -43,6 +42,7 @@ module.exports = [
                     'checksConditionals': true,
                 }
             ],
+            '@typescript-eslint/no-redundant-type-constituents': 'off',
             'no-console': 'warn',
             'prettier/prettier': [
                 'error',

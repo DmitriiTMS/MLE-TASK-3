@@ -4,6 +4,11 @@ export interface IProjectRequestModel {
 	userId: number;
 }
 
+export interface IProjectRequestUpdate {
+	name?: string;
+	description?: string | null;
+}
+
 export interface IProjectDatabaseData {
 	id: number;
 	name: string;

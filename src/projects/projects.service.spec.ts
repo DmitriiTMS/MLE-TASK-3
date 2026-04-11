@@ -12,6 +12,7 @@ import { IUserService } from '../users/user.service.interface';
 import { PROJECTS_PATH } from './constants';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { HttpError } from '../common/error/http-error';
+import { UpdateProjectDto } from './dto/update-project.dto';
 
 // npm run test -- src/projects/projects.service.spec.ts
 
@@ -25,6 +26,7 @@ const ProjectsRepositoryMock = {
 	getAllProjectsByUserId: jest.fn(),
 	findById: jest.fn(),
 	remove: jest.fn(),
+	update: jest.fn(),
 } as jest.Mocked<IProjectsRepository>;
 
 describe('ProjectsService', () => {
@@ -381,6 +383,335 @@ describe('ProjectsService', () => {
 
 			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledTimes(1);
 			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
+		});
+	});
+
+	describe('update', () => {
+		const userId = 1;
+		const projectId = 10;
+		const updateDto = {
+			name: 'Updated Project Name',
+			description: 'Updated Description',
+		};
+
+		const mockUser = {
+			id: 1,
+			name: 'user',
+			email: 'user@bk.ru',
+			hasPassword: 'hashedPassword',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const mockProjectData: ProjectModel = {
+			id: projectId,
+			name: 'Original Project',
+			description: 'Original Description',
+			userId: userId,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		it('should successfully update project when user exists and is owner', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, updateDto);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledTimes(1);
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: updateDto.name,
+				description: updateDto.description,
+			});
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledTimes(1);
+		});
+
+		it('should successfully update only name when description is not provided', async () => {
+			const updateNameOnly: UpdateProjectDto = { name: 'New Name Only' };
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, updateNameOnly);
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: 'New Name Only',
+			});
+		});
+
+		it('should successfully update only description when name is not provided', async () => {
+			const updateDescOnly = { description: 'New Description Only' };
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, updateDescOnly);
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: undefined,
+				description: 'New Description Only',
+			});
+		});
+
+		it('should update with empty object (no fields to update)', async () => {
+			const emptyUpdate = {};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, emptyUpdate);
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: undefined,
+				description: undefined,
+			});
+		});
+
+		it('should throw error when user does not exist', async () => {
+			const error = new HttpError(
+				HttpErrorCode.NOT_FOUND,
+				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+			UserServiceMock.getUserOrThrow.mockRejectedValue(error);
+
+			await expect(projectsService.update(userId, projectId, updateDto)).rejects.toThrow(
+				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+			expect(ProjectsRepositoryMock.findById).not.toHaveBeenCalled();
+			expect(ProjectsRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when project does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(projectsService.update(userId, projectId, updateDto)).rejects.toThrow(
+				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
+			expect(ProjectsRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when user is not the project owner', async () => {
+			const differentUserId = 999;
+			const projectWithDifferentOwner = {
+				...mockProjectData,
+				userId: differentUserId,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(projectWithDifferentOwner);
+
+			await expect(projectsService.update(userId, projectId, updateDto)).rejects.toThrow(
+				HttpErrorMessages[HttpErrorCode.FORBIDDEN],
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
+			expect(ProjectsRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should throw FORBIDDEN error when trying to update project owned by another user', async () => {
+			const ownerUserId = 2;
+			const currentUserId = 1;
+
+			const projectOfAnotherUser: ProjectModel = {
+				...mockProjectData,
+				id: projectId,
+				userId: ownerUserId,
+				name: 'Another User Project',
+			};
+
+			const currentUser = {
+				id: currentUserId,
+				name: 'current user',
+				email: 'current@bk.ru',
+				hasPassword: 'hashedPassword',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(currentUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(projectOfAnotherUser);
+
+			await expect(projectsService.update(projectId, currentUserId, updateDto)).rejects.toThrow(
+				HttpErrorMessages[HttpErrorCode.FORBIDDEN],
+			);
+
+			expect(ProjectsRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should handle repository update error gracefully', async () => {
+			const dbError = new Error('Database connection failed');
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockRejectedValue(dbError);
+
+			await expect(projectsService.update(userId, projectId, updateDto)).rejects.toThrow(
+				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalled();
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: updateDto.name,
+				description: updateDto.description,
+			});
+		});
+
+		it('should call getUserOrThrow with correct UPDATE_PROJECT path', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, updateDto);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+		});
+
+		it('should call findById with correct projectId', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, updateDto);
+
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledTimes(1);
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
+		});
+
+		it('should call update with correct parameters', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, updateDto);
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledTimes(1);
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: updateDto.name,
+				description: updateDto.description,
+			});
+		});
+
+		it('should handle project with null description during update', async () => {
+			const projectWithNullDesc: ProjectModel = {
+				...mockProjectData,
+				description: null,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(projectWithNullDesc);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, { description: 'New Description' });
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: undefined,
+				description: 'New Description',
+			});
+		});
+
+		it('should handle updating description to null', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, { description: null as any });
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: undefined,
+				description: null,
+			});
+		});
+
+		it('should handle updating name to empty string', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, projectId, { name: '' });
+
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(projectId, {
+				name: '',
+				description: undefined,
+			});
+		});
+
+		it('should handle large projectId values', async () => {
+			const largeProjectId = 999999999;
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue({
+				...mockProjectData,
+				id: largeProjectId,
+			});
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			await projectsService.update(userId, largeProjectId, updateDto);
+
+			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(largeProjectId);
+			expect(ProjectsRepositoryMock.update).toHaveBeenCalledWith(largeProjectId, {
+				name: updateDto.name,
+				description: updateDto.description,
+			});
+		});
+
+		it('should call updateFields on project entity with correct parameters', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockResolvedValue(undefined);
+
+			const updateFieldsSpy = jest.spyOn(ProjectEntity.prototype, 'updateFields');
+
+			await projectsService.update(userId, projectId, updateDto);
+
+			expect(updateFieldsSpy).toHaveBeenCalledWith({
+				name: updateDto.name,
+				description: updateDto.description,
+			});
+
+			updateFieldsSpy.mockRestore();
+		});
+
+		it('should throw INTERNAL_SERVER_ERROR when update fails with non-HttpError', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.findById.mockResolvedValue(mockProjectData);
+			ProjectsRepositoryMock.update.mockRejectedValue(new Error('Some database error'));
+
+			await expect(projectsService.update(userId, projectId, updateDto)).rejects.toThrow(
+				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
+			);
 		});
 	});
 

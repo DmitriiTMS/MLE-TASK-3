@@ -4,7 +4,7 @@ import { IProjectsRepository } from './projects.repository.interface';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../common/types/types';
 import { PrismaService } from '../common/database/prisma.service';
-import { IProjectRequestModel } from './types';
+import { IProjectRequestModel, IProjectRequestUpdate } from './types';
 
 @injectable()
 export class ProjectsRepository implements IProjectsRepository {
@@ -31,6 +31,22 @@ export class ProjectsRepository implements IProjectsRepository {
 					name: data.name,
 					description: data.description,
 					userId: data.userId,
+				},
+			});
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	async update(projectId: number, data: IProjectRequestUpdate): Promise<void> {
+		try {
+			await this.prismaService.client.projectModel.update({
+				where: {
+					id: projectId,
+				},
+				data: {
+					name: data.name,
+					description: data.description,
 				},
 			});
 		} catch (error) {

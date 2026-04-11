@@ -407,6 +407,376 @@ describe('ProjectsController', () => {
         });
     });
 
+    describe(`PATCH ${BASE_PROJECTS_PATH}${PROJECTS_PATH.UPDATE_PROJECT} - update`, () => {
+        let projectId: number;
+
+        beforeEach(async () => {
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Original Project Name',
+                    description: 'Original Description',
+                });
+
+            projectId = projectResponse.body.projectId;
+        });
+
+        it('should successfully update both name and description', async () => {
+            const updateData = {
+                name: 'Updated Project Name',
+                description: 'Updated Description',
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject).toBeDefined();
+            expect(updatedProject?.name).toBe('Updated Project Name');
+            expect(updatedProject?.description).toBe('Updated Description');
+        });
+
+        it('should successfully update only name', async () => {
+            const updateData = {
+                name: 'Only Name Updated',
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject).toBeDefined();
+            expect(updatedProject?.name).toBe('Only Name Updated');
+            expect(updatedProject?.description).toBe('Original Description'); 
+        });
+
+        it('should successfully update only description', async () => {
+            const updateData = {
+                description: 'Only Description Updated',
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject).toBeDefined();
+            expect(updatedProject?.name).toBe('Original Project Name'); 
+            expect(updatedProject?.description).toBe('Only Description Updated');
+        });
+
+        it('should update description to null', async () => {
+            const updateData = {
+                description: null,
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject).toBeDefined();
+            expect(updatedProject?.name).toBe('Original Project Name');
+            expect(updatedProject?.description).toBeNull();
+        });
+
+        it('should update name to empty string', async () => {
+            const updateData = {
+                name: '',
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject).toBeDefined();
+            expect(updatedProject?.name).toBe('');
+            expect(updatedProject?.description).toBe('Original Description');
+        });
+
+        it('should return 401 when no authorization token provided', async () => {
+            const updateData = { name: 'New Name' };
+
+            await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .send(updateData)
+                .expect(401);
+        });
+
+        it('should return 401 when invalid token provided', async () => {
+            const updateData = { name: 'New Name' };
+
+            await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', 'Bearer invalid-token')
+                .send(updateData)
+                .expect(401);
+        });
+
+        it('should return 401 with malformed token', async () => {
+            const updateData = { name: 'New Name' };
+
+            await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', 'WrongScheme token')
+                .send(updateData)
+                .expect(401);
+        });
+
+        it('should return 404 when project does not exist', async () => {
+            const nonExistentId = 99999;
+            const updateData = { name: 'New Name' };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${nonExistentId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(404);
+
+            expect(response.body).toHaveProperty('message');
+            expect(response.body.message).toBe('Ресурс не найден');
+        });
+
+        it('should return 403 when user tries to update someone else\'s project', async () => {
+            const secondUserRegister = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send({
+                    name: 'User 2',
+                    email: 'user2@example.com',
+                    password: 'password123',
+                });
+
+            const secondUserToken = secondUserRegister.body.accessToken;
+
+            const secondProjectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${secondUserToken}`)
+                .send({
+                    name: 'Second User Project',
+                    description: 'Second Description',
+                });
+
+            const secondProjectId = secondProjectResponse.body.projectId;
+            const updateData = { name: 'Hacked Name' };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${secondProjectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message');
+            expect(response.body.message).toBe('Доступ запрещен');
+
+            const projectStillSame = await prismaService.client.projectModel.findFirst({
+                where: { id: secondProjectId }
+            });
+
+            expect(projectStillSame).toBeDefined();
+            expect(projectStillSame?.name).toBe('Second User Project');
+        });
+
+        it('should return 400 when projectId is not a number', async () => {
+            const updateData = { name: 'New Name' };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/invalid-id`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('errors');
+            expect(response.body.errors[0].field).toBe('projectId');
+        });
+
+        it('should return 204 with empty body on successful update', async () => {
+            const updateData = { name: 'New Name' };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+            expect(response.text).toBe('');
+        });
+
+        it('should handle updating with empty object (no changes)', async () => {
+            const updateData = {};
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const project = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(project?.name).toBe('Original Project Name');
+            expect(project?.description).toBe('Original Description');
+        });
+
+        it('should update project and verify updatedAt changed', async () => {
+            const originalProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            const originalUpdatedAt = originalProject?.updatedAt;
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const updateData = { name: 'Updated Name' };
+
+            await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject?.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt?.getTime() || 0);
+        });
+
+        it('should validate name max length (100 characters)', async () => {
+            const longName = 'A'.repeat(101);
+            const updateData = { name: longName };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('errors');
+            expect(response.body.errors[0].field).toBe('name');
+        });
+
+        it('should validate description max length (1000 characters)', async () => {
+            const longDescription = 'A'.repeat(1001);
+            const updateData = { description: longDescription };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('errors');
+            expect(response.body.errors[0].field).toBe('description');
+        });
+
+        it('should validate name is string', async () => {
+            const updateData = { name: 123 };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('errors');
+        });
+
+        it('should validate description is string', async () => {
+            const updateData = { description: 123 };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('errors');
+        });
+
+        it('should update project when only description is provided as empty string', async () => {
+            const updateData = { description: '' };
+
+            const response = await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+
+            const updatedProject = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(updatedProject?.description).toBe('');
+        });
+
+        it('should not update project if user is not authenticated', async () => {
+            const updateData = { name: 'New Name' };
+
+            await request(application.app)
+                .patch(`${BASE_PROJECTS_PATH}/${projectId}`)
+                .send(updateData)
+                .expect(401);
+
+            const project = await prismaService.client.projectModel.findFirst({
+                where: { id: projectId }
+            });
+
+            expect(project?.name).toBe('Original Project Name');
+        });
+    });
+
     describe(`DELETE ${BASE_PROJECTS_PATH}${PROJECTS_PATH.REMOVE_PROJECT} - remove`, () => {
         let projectId: number;
 

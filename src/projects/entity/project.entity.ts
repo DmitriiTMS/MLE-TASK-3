@@ -50,6 +50,20 @@ export class ProjectEntity {
 		return this._userId === userId;
 	}
 
+	updateFields(updates: { name?: string; description?: string }): {
+		name?: string;
+		description?: string | null;
+	} {
+		const result: { name?: string; description?: string | null } = {};
+		if (updates.name !== undefined) {
+			result.name = updates.name;
+		}
+		if (updates.description !== undefined) {
+			result.description = updates.description;
+		}
+		return result;
+	}
+
 	toResponse(): IProjectResponse {
 		return {
 			id: this._id,

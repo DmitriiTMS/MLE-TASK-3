@@ -29,7 +29,7 @@ export class UserService implements IUserService {
 		}
 	}
 
-	async getUserOrThrow(userId: number, errorPath?: string) {
+	async getUserOrThrow(userId: number, errorPath?: string): Promise<UserModel> {
 		const user = await this.userRepository.findById(userId);
 		if (!user) {
 			throw new HttpError(
