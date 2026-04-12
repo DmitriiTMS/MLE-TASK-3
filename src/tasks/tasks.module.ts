@@ -8,9 +8,8 @@ import { TasksService } from './tasks.service';
 import { ITasksRepository } from './tasks.reposotory.interface';
 import { TasksRepository } from './tasks.repository';
 
-
 export const tasksModule = new ContainerModule((bind: interfaces.Bind) => {
-    bind<ITasksController>(TYPES.ITasksController).to(TasksController).inSingletonScope();
-    bind<ITasksService>(TYPES.ITasksService).to(TasksService).inSingletonScope();
-    bind<ITasksRepository>(TYPES.ITasksRepository).to(TasksRepository).inSingletonScope();
+	bind<ITasksController>(TYPES.ITasksController).to(TasksController).inSingletonScope();
+	bind<ITasksService>(TYPES.ITasksService).to(TasksService).inSingletonScope();
+	bind<ITasksRepository>(TYPES.ITasksRepository).to(TasksRepository).inSingletonScope();
 });

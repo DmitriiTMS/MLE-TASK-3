@@ -6,4 +6,5 @@ export interface IProjectsController {
 	getProjectByUserId(req: Request, res: Response, next: NextFunction): Promise<void>;
 	update(req: Request, res: Response, next: NextFunction): Promise<void>;
 	remove(req: Request, res: Response, next: NextFunction): Promise<void>;
+	createTaskForProject(req: Request, res: Response, next: NextFunction): Promise<void>;
 }
