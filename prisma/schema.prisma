@@ -17,6 +17,9 @@ model UserModel {
 
   projects ProjectModel[]
 
+  createdTasks  TaskModel[] @relation("TaskCreator")
+  executorTasks TaskModel[] @relation("TaskExecutor")
+
   @@map("users")
 }
 
@@ -30,5 +33,36 @@ model ProjectModel {
   userId Int       @map("user_id")
   user   UserModel @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  tasks TaskModel[]
+
   @@map("projects")
+}
+
+model TaskModel {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime @map("due_date")
+
+  status      TaskStatus @default(CREATED)
+  completedAt DateTime?  @map("completed_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  projectId Int          @map("project_id")
+  project   ProjectModel @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createUserId Int       @map("create_user_id")
+  creator      UserModel @relation("TaskCreator", fields: [createUserId], references: [id])
+
+  executorUserId Int?       @map("executor_user_id")
+  executor       UserModel? @relation("TaskExecutor", fields: [executorUserId], references: [id])
+
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  CREATED
+  IN_PROGRESS
+  COMPLETED
 }
