@@ -8,13 +8,27 @@ datasource db {
 }
 
 model UserModel {
-  id Int @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
-  email       String @unique
-  hasPassword String @map("hash_password")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  email       String   @unique
+  hasPassword String   @map("hash_password")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  projects ProjectModel[]
 
   @@map("users")
 }
 
+model ProjectModel {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  userId Int       @map("user_id")
+  user   UserModel @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}

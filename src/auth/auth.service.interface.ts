@@ -10,7 +10,7 @@ export interface IRegisterResponse extends TokensPair {
 export interface IAuthService {
 	register(registerDto: RegisterDto): Promise<IRegisterResponse | null>;
 	login(loginDto: LoginDto): Promise<IRegisterResponse | null>;
-	refreshTokens(refreshToken: string): Promise<TokensPair | null>;
+	refreshTokens(refreshToken: string): TokensPair | null;
 	getMe(email: string): Promise<{ id: number } | null>;
 	validateUser(loginDto: LoginDto): Promise<UserModel | null>;
 }

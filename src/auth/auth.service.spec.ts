@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import 'reflect-metadata';
 import { AuthService } from './auth.service';
 import { IUserService } from '../users/user.service.interface';
@@ -13,8 +14,11 @@ import { Container } from 'inversify';
 import { IAuthService } from './auth.service.interface';
 import { TYPES } from '../common/types/types';
 
+// npm run test -- src/auth/auth.service.spec.ts
+
 const UserServiceMock = {
 	createUser: jest.fn(),
+	getUserOrThrow: jest.fn(),
 } as jest.Mocked<IUserService>;
 
 const PasswordHasherMock = {
@@ -25,6 +29,7 @@ const PasswordHasherMock = {
 const UserRepositoryMock = {
 	create: jest.fn(),
 	findByEmail: jest.fn(),
+	findById: jest.fn(),
 } as jest.Mocked<IUserRepository>;
 
 const LoggerMock = {
@@ -89,7 +94,7 @@ describe('AuthService', () => {
 			JwtServiceMock.generateTokens.mockReturnValue(mockTokens);
 
 			const result = await authService.register(registerDto);
-	
+
 			expect(UserRepositoryMock.findByEmail).toHaveBeenCalledWith(registerDto.email);
 			expect(PasswordHasherMock.hash).toHaveBeenCalledWith(registerDto.password);
 			expect(UserServiceMock.createUser).toHaveBeenCalledWith({
@@ -97,7 +102,10 @@ describe('AuthService', () => {
 				email: registerDto.email,
 				passwordHash: 'hashedPassword',
 			});
-			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({ email: registerDto.email, userId: mockUser.id });
+			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({
+				email: registerDto.email,
+				userId: mockUser.id,
+			});
 			expect(result).toEqual({
 				id: mockUser.id,
 				accessToken: mockTokens.accessToken,
@@ -162,7 +170,10 @@ describe('AuthService', () => {
 			const result = await authService.login(loginDto);
 
 			expect(authService.validateUser).toHaveBeenCalledWith(loginDto);
-			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({ email: loginDto.email, userId: mockUser.id });
+			expect(JwtServiceMock.generateTokens).toHaveBeenCalledWith({
+				email: loginDto.email,
+				userId: mockUser.id,
+			});
 			expect(result).toEqual({
 				id: mockUser.id,
 				accessToken: mockTokens.accessToken,
@@ -224,11 +235,11 @@ describe('AuthService', () => {
 			refreshToken: 'new-refresh-token',
 		};
 
-		it('should successfully refresh tokens', async () => {
+		it('should successfully refresh tokens', () => {
 			JwtServiceMock.verifyRefreshToken.mockReturnValue(decodedToken);
 			JwtServiceMock.refreshTokens.mockReturnValue(newTokens);
 
-			const result = await authService.refreshTokens(refreshToken);
+			const result = authService.refreshTokens(refreshToken);
 
 			expect(JwtServiceMock.verifyRefreshToken).toHaveBeenCalledWith(refreshToken);
 			expect(JwtServiceMock.refreshTokens).toHaveBeenCalledWith(refreshToken);
@@ -239,10 +250,10 @@ describe('AuthService', () => {
 			expect(result).toEqual(newTokens);
 		});
 
-		it('should return null and log error if refresh token is invalid', async () => {
+		it('should return null and log error if refresh token is invalid', () => {
 			JwtServiceMock.verifyRefreshToken.mockReturnValue(null);
 
-			const result = await authService.refreshTokens(refreshToken);
+			const result = authService.refreshTokens(refreshToken);
 
 			expect(JwtServiceMock.verifyRefreshToken).toHaveBeenCalledWith(refreshToken);
 			expect(LoggerMock.error).toHaveBeenCalledWith('Invalid refresh token');
@@ -250,11 +261,11 @@ describe('AuthService', () => {
 			expect(result).toBeNull();
 		});
 
-		it('should return null if refreshTokens returns null', async () => {
+		it('should return null if refreshTokens returns null', () => {
 			JwtServiceMock.verifyRefreshToken.mockReturnValue(decodedToken);
 			JwtServiceMock.refreshTokens.mockReturnValue(null);
 
-			const result = await authService.refreshTokens(refreshToken);
+			const result = authService.refreshTokens(refreshToken);
 
 			expect(JwtServiceMock.verifyRefreshToken).toHaveBeenCalledWith(refreshToken);
 			expect(JwtServiceMock.refreshTokens).toHaveBeenCalledWith(refreshToken);

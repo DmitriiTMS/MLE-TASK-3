@@ -13,4 +13,8 @@ export const TYPES = {
 
 	IUserService: Symbol.for('IUserService'),
 	IUserRepository: Symbol.for('IUserRepository'),
+
+	IProjectsController: Symbol.for('IProjectsController'),
+	IProjectsService: Symbol.for('IProjectsService'),
+	IProjectsRepository: Symbol.for('IProjectsRepository'),
 };

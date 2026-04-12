@@ -1,4 +1,3 @@
-// eslint.config.cjs
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsparser = require('@typescript-eslint/parser');
 const prettier = require('eslint-plugin-prettier');
@@ -35,6 +34,15 @@ module.exports = [
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/explicit-function-return-type': 'warn',
             '@typescript-eslint/no-unused-vars': 'off',
+            '@typescript-eslint/unbound-method': 'off',
+            '@typescript-eslint/no-misused-promises': [
+                'error',
+                {
+                    'checksVoidReturn': false,
+                    'checksConditionals': true,
+                }
+            ],
+            '@typescript-eslint/no-redundant-type-constituents': 'off',
             'no-console': 'warn',
             'prettier/prettier': [
                 'error',

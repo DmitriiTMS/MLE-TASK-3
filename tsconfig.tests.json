@@ -4,7 +4,10 @@
     "rootDir": ".",
     "noEmit": true,
     "types": ["node", "jest"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "typeRoots": ["./node_modules/@types"],
   },
   "include": ["src/**/*", "tests/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]

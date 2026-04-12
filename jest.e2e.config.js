@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
+  roots: ['<rootDir>/tests/'],
   testMatch: ['**/*.e2e.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   collectCoverageFrom: [
@@ -19,4 +19,7 @@ module.exports = {
       tsconfig: 'tsconfig.tests.json',
     }],
   },
+  setupFiles: ['<rootDir>/tests/env.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/e2e.setup.ts'],
+  verbose: true
 };
