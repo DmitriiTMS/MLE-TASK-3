@@ -28,4 +28,18 @@ export class TasksRepository implements ITasksRepository {
 			throw error;
 		}
 	}
+
+	async findById(taskId: number): Promise<TaskModel | null> {
+		return this.prismaService.client.taskModel.findUnique({
+			where: { id: taskId },
+			include: {
+				project: {
+					select: {
+						name: true,
+						description: true,
+					},
+				},
+			},
+		});
+	}
 }

@@ -80,7 +80,7 @@ describe('TasksController', () => {
     describe(`POST ${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT} - create task for project`, () => {
 
         beforeEach(async () => {
-           
+
             const registerResponse = await request(application.app)
                 .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser);
@@ -88,7 +88,7 @@ describe('TasksController', () => {
             authToken = registerResponse.body.accessToken;
             userId = registerResponse.body.id;
 
-       
+
             const executorRegisterResponse = await request(application.app)
                 .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testExecutor);
@@ -261,20 +261,6 @@ describe('TasksController', () => {
                 title: 'Task without dueDate',
                 description: 'Description',
                 status: TaskStatus.CREATED,
-            };
-
-            await request(application.app)
-                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send(invalidTask)
-                .expect(400);
-        });
-
-        it('should return 400 when status is missing', async () => {
-            const invalidTask = {
-                title: 'Task without status',
-                description: 'Description',
-                dueDate: '2024-12-31T00:00:00.000Z',
             };
 
             await request(application.app)

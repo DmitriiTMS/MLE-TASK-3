@@ -1,5 +1,5 @@
 import { TaskStatus } from '@prisma/client';
-import { ITaskDatabaseData, ITaskResponse } from '../types';
+import { IProjectForTaskData, ITaskDatabaseData, ITaskResponse } from '../types';
 
 export class TaskEntity {
 	private _id: number;
@@ -13,6 +13,7 @@ export class TaskEntity {
 	private _projectId: number;
 	private _createUserId: number;
 	private _executorUserId?: number | null;
+	private _project?: IProjectForTaskData;
 
 	constructor(
 		title: string,
@@ -35,7 +36,6 @@ export class TaskEntity {
 		this._completedAt = null;
 	}
 
-	// Getters
 	get id(): number {
 		return this._id;
 	}
@@ -80,6 +80,14 @@ export class TaskEntity {
 		return this._executorUserId || null;
 	}
 
+	get project(): IProjectForTaskData | null {
+		return this._project || null;
+	}
+
+	set project(value: IProjectForTaskData) {
+		this._project = value;
+	}
+
 	static fromDatabase(data: ITaskDatabaseData): TaskEntity {
 		const entity = new TaskEntity(
 			data.title,
@@ -95,6 +103,9 @@ export class TaskEntity {
 		entity._updatedAt = data.updatedAt;
 		if (data.completedAt) {
 			entity._completedAt = data.completedAt;
+		}
+		if (data.project) {
+			entity._project = data.project;
 		}
 		return entity;
 	}
@@ -192,7 +203,7 @@ export class TaskEntity {
 	}
 
 	toResponse(): ITaskResponse {
-		return {
+		const response: ITaskResponse = {
 			id: this._id,
 			title: this._title,
 			description: this._description,
@@ -203,5 +214,11 @@ export class TaskEntity {
 			createUserId: this._createUserId,
 			executorUserId: this._executorUserId,
 		};
+
+		if (this._project) {
+			response.project = this._project;
+		}
+
+		return response;
 	}
 }

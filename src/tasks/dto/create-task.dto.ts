@@ -34,7 +34,8 @@ export class CreateTaskDto {
 	@IsEnum(TaskStatus, {
 		message: 'Поле [status] должно быть одним из значений: CREATED, IN_PROGRESS, COMPLETED',
 	})
-	status: TaskStatus;
+	@IsOptional()
+	status?: TaskStatus;
 
 	@IsDateString(
 		{},

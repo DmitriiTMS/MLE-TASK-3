@@ -13,7 +13,7 @@ export class AuthMiddleware implements IMiddleware {
 		@inject(TYPES.ILogger) private readonly logger?: ILogger,
 	) {}
 
-	async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
+	execute(req: Request, res: Response, next: NextFunction): void {
 		const authHeader = req.headers.authorization;
 
 		if (!authHeader || !authHeader.startsWith('Bearer ')) {

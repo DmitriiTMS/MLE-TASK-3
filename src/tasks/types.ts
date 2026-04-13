@@ -1,5 +1,10 @@
 import { TaskStatus } from '@prisma/client';
 
+export interface IProjectForTaskData {
+	name: string;
+	description: string;
+}
+
 export interface ICreateTaskData {
 	projectId: number;
 	createUserId: number;
@@ -23,6 +28,7 @@ export interface ITaskDatabaseData {
 	projectId: number;
 	createUserId: number;
 	executorUserId?: number | null;
+	project?: IProjectForTaskData;
 }
 
 export interface ITaskResponse {
@@ -35,6 +41,7 @@ export interface ITaskResponse {
 	projectId: number;
 	createUserId: number;
 	executorUserId?: number | null;
+	project?: IProjectForTaskData;
 }
 
 export interface IUpdateTaskData {

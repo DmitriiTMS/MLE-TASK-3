@@ -9,6 +9,10 @@ import { IUserService } from '../users/user.service.interface';
 import { PROJECTS_MESSAGES, PROJECTS_PATH } from '../projects/constants';
 import { IProjectsService } from '../projects/projects.service.interface';
 import { USERS_MESSAGES } from '../users/constants';
+import { TaskModel } from '@prisma/client';
+import { HttpError } from '../common/error/http-error';
+import { HttpErrorCode } from '../common/error/constants';
+import { TASKS_MESSAGES, TASKS_PATHS } from './constants';
 
 @injectable()
 export class TasksService implements ITasksService {
@@ -16,7 +20,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
-	) { }
+	) {}
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
@@ -24,6 +28,7 @@ export class TasksService implements ITasksService {
 			USERS_MESSAGES.USER_NOT_FOUND_CREATER,
 			PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT,
 		);
+
 		if (data.executorUserId) {
 			await this.userService.getUserOrThrow(
 				data.executorUserId,
@@ -59,5 +64,29 @@ export class TasksService implements ITasksService {
 		});
 
 		return TaskEntity.fromDatabase(savedTask);
+	}
+
+	async getOneTask(userId: number, taskId: number): Promise<TaskEntity> {
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+		);
+		const taskData = await this.getTaskOrThrow(
+			taskId,
+			TASKS_MESSAGES.TASK_NOT_FOUND,
+			TASKS_PATHS.GET_ONE_TASK,
+		);
+
+		const task = TaskEntity.fromDatabase(taskData);
+		return task;
+	}
+
+	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {
+		const task = await this.tasksRepository.findById(taskId);
+		if (!task) {
+			throw new HttpError(HttpErrorCode.NOT_FOUND, message, errorPath);
+		}
+		return task;
 	}
 }
