@@ -8,7 +8,6 @@ import {
 	IsPositive,
 	IsString,
 	MaxLength,
-	MinDate,
 } from 'class-validator';
 
 export class CreateTaskDto {
@@ -35,8 +34,7 @@ export class CreateTaskDto {
 	@IsEnum(TaskStatus, {
 		message: 'Поле [status] должно быть одним из значений: CREATED, IN_PROGRESS, COMPLETED',
 	})
-	@IsOptional()
-	status?: TaskStatus;
+	status: TaskStatus;
 
 	@IsDateString(
 		{},

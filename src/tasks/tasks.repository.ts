@@ -19,6 +19,7 @@ export class TasksRepository implements ITasksRepository {
 					description: data.description,
 					completedAt: data.completedAt,
 					executorUserId: data.executorUserId,
+					status: data.status,
 					title: data.title,
 					dueDate: data.dueDate,
 				},

@@ -16,7 +16,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
-	) {}
+	) { }
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
