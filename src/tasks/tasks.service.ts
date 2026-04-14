@@ -20,7 +20,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
-	) {}
+	) { }
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
@@ -77,8 +77,15 @@ export class TasksService implements ITasksService {
 			TASKS_MESSAGES.TASK_NOT_FOUND,
 			TASKS_PATHS.GET_ONE_TASK,
 		);
-
 		const task = TaskEntity.fromDatabase(taskData);
+		const hasAccess = task.isCreatorUser(userId) || task.isExecutorUser(userId);
+		if (!hasAccess) {
+			throw new HttpError(
+				HttpErrorCode.FORBIDDEN,
+				TASKS_MESSAGES.TASK_BAN_ON_VIEWING,
+				TASKS_PATHS.GET_ONE_TASK,
+			);
+		}
 		return task;
 	}
 

@@ -276,4 +276,160 @@ describe('TasksService', () => {
 			expect(result.description).toBeNull();
 		});
 	});
+
+	describe('getOneTask', () => {
+		const userId = 1;
+		const taskId = 100;
+
+		const mockUser = {
+			id: 1,
+			name: 'user',
+			email: 'user@bk.ru',
+			hasPassword: 'hashedPassword',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const mockTaskData: TaskModel = {
+			id: 100,
+			title: 'task-title',
+			description: 'task-description',
+			dueDate: new Date('2024-12-31'),
+			status: TaskStatus.CREATED,
+			completedAt: null,
+			projectId: 10,
+			createUserId: 1,
+			executorUserId: 2,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		it('should successfully get a task when user is creator', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockTaskData);
+
+			const result = await tasksService.getOneTask(userId, taskId);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledTimes(1);
+			expect(result).toBeInstanceOf(TaskEntity);
+			expect(result.id).toBe(mockTaskData.id);
+			expect(result.title).toBe(mockTaskData.title);
+			expect(result.description).toBe(mockTaskData.description);
+			expect(result.dueDate).toBe(mockTaskData.dueDate);
+			expect(result.status).toBe(mockTaskData.status);
+			expect(result.projectId).toBe(mockTaskData.projectId);
+			expect(result.createUserId).toBe(mockTaskData.createUserId);
+			expect(result.executorUserId).toBe(mockTaskData.executorUserId);
+		});
+
+		it('should successfully get a task when user is executor', async () => {
+			const taskWhereUserIsExecutor: TaskModel = {
+				...mockTaskData,
+				createUserId: 99,
+				executorUserId: userId,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWhereUserIsExecutor);
+
+			const result = await tasksService.getOneTask(userId, taskId);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(result).toBeInstanceOf(TaskEntity);
+			expect(result.createUserId).toBe(99);
+			expect(result.executorUserId).toBe(userId);
+		});
+
+		it('should throw error when user does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockRejectedValue(
+				new Error(HttpErrorMessages[HttpErrorCode.NOT_FOUND]),
+			);
+
+			await expect(tasksService.getOneTask(userId, taskId)).rejects.toThrow();
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when task does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(tasksService.getOneTask(userId, taskId)).rejects.toThrow();
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledTimes(1);
+		});
+
+		it('should throw error when user is not creator and not executor', async () => {
+			const taskWithDifferentUser: TaskModel = {
+				...mockTaskData,
+				createUserId: 99,
+				executorUserId: 98,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithDifferentUser);
+
+			await expect(tasksService.getOneTask(userId, taskId)).rejects.toThrow();
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledTimes(1);
+		});
+
+		it('should successfully get task when user is both creator and executor', async () => {
+			const taskWhereUserIsBoth: TaskModel = {
+				...mockTaskData,
+				createUserId: userId,
+				executorUserId: userId,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWhereUserIsBoth);
+
+			const result = await tasksService.getOneTask(userId, taskId);
+
+			expect(result).toBeInstanceOf(TaskEntity);
+			expect(result.createUserId).toBe(userId);
+			expect(result.executorUserId).toBe(userId);
+		});
+
+		it('should return task with project data when project is included', async () => {
+			const taskWithProject = {
+				...mockTaskData,
+				project: {
+					id: 10,
+					name: 'project-name',
+					description: 'project-description',
+					userId: 1,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				},
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithProject);
+
+			const result = await tasksService.getOneTask(userId, taskId);
+
+			expect(result).toBeInstanceOf(TaskEntity);
+			expect(result.project).toBeDefined();
+			expect(result.project?.name).toBe('project-name');
+		});
+	});
 });

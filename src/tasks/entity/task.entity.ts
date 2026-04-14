@@ -110,17 +110,12 @@ export class TaskEntity {
 		return entity;
 	}
 
-	isOwnedBy(userId: number): boolean {
+	isCreatorUser(userId: number): boolean {
 		return this._createUserId === userId;
 	}
 
-	isExecutor(userId: number): boolean {
+	isExecutorUser(userId: number): boolean {
 		return this._executorUserId === userId;
-	}
-
-	// Создатель или исполнитель может редактировать задачу
-	canUserEdit(userId: number): boolean {
-		return this.isOwnedBy(userId) || this.isExecutor(userId);
 	}
 
 	isCompleted(): boolean {

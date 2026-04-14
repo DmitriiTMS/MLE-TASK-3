@@ -7,6 +7,7 @@ import request from 'supertest';
 import { BASE_PROJECTS_PATH, PROJECTS_PATH } from '../../src/projects/constants';
 import { AUTH_PATHS, BASE_AUTH_PATH } from '../../src/auth/constants';
 import { TaskStatus } from '@prisma/client';
+import { BASE_TASKS_PATH, TASKS_PATHS } from '../../src/tasks/constants';
 
 
 // npm run test:e2e -- tests/tasks/tasks.e2e.ts
@@ -320,6 +321,141 @@ describe('TasksController', () => {
             });
 
             expect(task?.executorUserId).toBe(executorUserId);
+        });
+    });
+
+    describe(`GET ${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK} - get one task`, () => {
+        let taskId: number;
+
+        beforeEach(async () => {
+          
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+            const executorRegisterResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testExecutor);
+
+            executorAuthToken = executorRegisterResponse.body.accessToken;
+            executorUserId = executorRegisterResponse.body.id;
+
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(validProject)
+                .expect(201);
+
+            projectId = projectResponse.body.projectId;
+
+            const taskData = {
+                title: validTask.title,
+                description: validTask.description,
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+                executorUserId: executorUserId,
+            };
+
+            const taskResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskData)
+                .expect(201);
+
+            taskId = taskResponse.body.taskId;
+        });
+
+        it('should successfully get task when user is creator', async () => {
+            const response = await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body).toHaveProperty('id');
+            expect(response.body.id).toBe(taskId);
+            expect(response.body.title).toBe(validTask.title);
+            expect(response.body.description).toBe(validTask.description);
+            expect(response.body.dueDate).toBe(validTask.dueDate);
+            expect(response.body.status).toBe(TaskStatus.CREATED);
+            expect(response.body.completedAt).toBeNull();
+            expect(response.body.projectId).toBe(projectId);
+            expect(response.body.createUserId).toBe(userId);
+            expect(response.body.executorUserId).toBe(executorUserId);
+        });
+
+        it('should successfully get task when user is executor', async () => {
+            const response = await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${executorAuthToken}`)
+                .expect(200);
+
+            expect(response.body).toHaveProperty('id');
+            expect(response.body.id).toBe(taskId);
+            expect(response.body.title).toBe(validTask.title);
+            expect(response.body.createUserId).toBe(userId);
+            expect(response.body.executorUserId).toBe(executorUserId);
+        });
+
+        it('should return 401 when no authorization token provided', async () => {
+            await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', taskId.toString())}`)
+                .expect(401);
+        });
+
+        it('should return 401 when invalid token provided', async () => {
+            await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', 'Bearer invalid-token')
+                .expect(401);
+        });
+
+        it('should return 404 when task does not exist', async () => {
+            const nonExistentTaskId = 99999;
+
+            await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', nonExistentTaskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+        });
+
+        it('should return 403 when user is not creator and not executor', async () => {
+
+            const anotherUser = {
+                name: 'another',
+                email: 'another@bk.ru',
+                password: '9012',
+            };
+
+            const anotherUserResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(anotherUser);
+
+            const anotherUserToken = anotherUserResponse.body.accessToken;
+
+            await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${anotherUserToken}`)
+                .expect(403);
+        });
+
+        it('should return task with project data when project exists', async () => {
+            const response = await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body).toHaveProperty('projectId');
+            expect(response.body.projectId).toBe(projectId);
+        });
+
+        it('should return 400 when taskId is not a number', async () => {
+            await request(application.app)
+                .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', 'invalid')}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(400);
         });
     });
 });

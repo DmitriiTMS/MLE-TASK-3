@@ -8,4 +8,5 @@ export const TASKS_PATHS = {
 
 export const TASKS_MESSAGES = {
 	TASK_NOT_FOUND: 'Задача не найдена',
+	TASK_BAN_ON_VIEWING: 'Доступ запрещён: вы не являетесь создателем или исполнителем задачи',
 } as const;
