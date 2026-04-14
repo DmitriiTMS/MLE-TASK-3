@@ -11,8 +11,9 @@ import { IProjectsService } from '../projects/projects.service.interface';
 import { USERS_MESSAGES } from '../users/constants';
 import { TaskModel } from '@prisma/client';
 import { HttpError } from '../common/error/http-error';
-import { HttpErrorCode } from '../common/error/constants';
+import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TASKS_MESSAGES, TASKS_PATHS } from './constants';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 @injectable()
 export class TasksService implements ITasksService {
@@ -42,7 +43,6 @@ export class TasksService implements ITasksService {
 			PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
 			PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT,
 		);
-
 		const task = new TaskEntity(
 			data.title,
 			data.dueDate,
@@ -52,25 +52,31 @@ export class TasksService implements ITasksService {
 			data.executorUserId,
 			data.status,
 		);
-
-		const savedTask = await this.tasksRepository.create({
-			title: task.title,
-			description: task.description,
-			dueDate: task.dueDate,
-			status: task.status,
-			projectId: task.projectId,
-			createUserId: task.createUserId,
-			executorUserId: task.executorUserId,
-		});
-
-		return TaskEntity.fromDatabase(savedTask);
+		try {
+			const savedTask = await this.tasksRepository.create({
+				title: task.title,
+				description: task.description,
+				dueDate: task.dueDate,
+				status: task.status,
+				projectId: task.projectId,
+				createUserId: task.createUserId,
+				executorUserId: task.executorUserId,
+			});
+			return TaskEntity.fromDatabase(savedTask);
+		} catch (error) {
+			throw new HttpError(
+				HttpErrorCode.INTERNAL_SERVER_ERROR,
+				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
+				PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT,
+			);
+		}
 	}
 
 	async getOneTask(userId: number, taskId: number): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
 			userId,
 			USERS_MESSAGES.USER_NOT_FOUND,
-			PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+			TASKS_PATHS.GET_ONE_TASK,
 		);
 		const taskData = await this.getTaskOrThrow(
 			taskId,
@@ -87,6 +93,44 @@ export class TasksService implements ITasksService {
 			);
 		}
 		return task;
+	}
+
+	async updateTask(userId: number, taskId: number, data: UpdateTaskDto): Promise<void> {
+		const { title, description, dueDate, executorUserId, status } = data;
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			TASKS_PATHS.UPDATE_TASK,
+		);
+		const taskData = await this.getTaskOrThrow(
+			taskId,
+			TASKS_MESSAGES.TASK_NOT_FOUND,
+			TASKS_PATHS.UPDATE_TASK,
+		);
+		const task = TaskEntity.fromDatabase(taskData);
+		if (!task.isCreatorUser(userId)) {
+			throw new HttpError(
+				HttpErrorCode.FORBIDDEN,
+				TASKS_MESSAGES.TASK_BAN_ON_UPDATE,
+				TASKS_PATHS.UPDATE_TASK,
+			);
+		}
+		const updatedTask = task.updateFields({ title, description, dueDate, executorUserId, status });
+		try {
+			await this.tasksRepository.update(taskId, {
+				title: updatedTask.title,
+				description: updatedTask.description,
+				dueDate: updatedTask.dueDate,
+				status: updatedTask.status,
+				executorUserId: updatedTask.executorUserId
+			});
+		} catch (error) {
+			throw new HttpError(
+				HttpErrorCode.INTERNAL_SERVER_ERROR,
+				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
+				PROJECTS_PATH.UPDATE_PROJECT,
+			);
+		}
 	}
 
 	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {

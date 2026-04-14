@@ -13,6 +13,8 @@ import { USERS_MESSAGES } from '../users/constants';
 import { PROJECTS_MESSAGES, PROJECTS_PATH } from '../projects/constants';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TaskEntity } from './entity/task.entity';
+import { TASKS_MESSAGES, TASKS_PATHS } from './constants';
+import { HttpError } from '../common/error/http-error';
 
 // npm run test -- src/tasks/tasks.service.spec.ts
 
@@ -33,6 +35,7 @@ const ProjectsServiceMock = {
 const TasksRepositoryMock = {
 	create: jest.fn(),
 	findById: jest.fn(),
+	update: jest.fn(),
 } as jest.Mocked<ITasksRepository>;
 
 describe('TasksService', () => {
@@ -313,7 +316,7 @@ describe('TasksService', () => {
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
 				USERS_MESSAGES.USER_NOT_FOUND,
-				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+				TASKS_PATHS.GET_ONE_TASK,
 			);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
@@ -358,7 +361,7 @@ describe('TasksService', () => {
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
 				USERS_MESSAGES.USER_NOT_FOUND,
-				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+				TASKS_PATHS.GET_ONE_TASK,
 			);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(TasksRepositoryMock.findById).not.toHaveBeenCalled();
@@ -431,5 +434,168 @@ describe('TasksService', () => {
 			expect(result.project).toBeDefined();
 			expect(result.project?.name).toBe('project-name');
 		});
+	});
+
+	describe('updateTask', () => {
+		const userId = 1;
+		const taskId = 100;
+		const updateTaskData = {
+			title: 'Updated task title',
+			description: 'Updated description',
+			dueDate: '2025-12-31',
+			executorUserId: 3,
+			status: TaskStatus.IN_PROGRESS,
+		};
+
+		const mockCreatorUser = {
+			id: 1,
+			name: 'creator',
+			email: 'creator@bk.ru',
+			hasPassword: 'hashedPassword',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const mockExistingTask: TaskModel = {
+			id: taskId,
+			title: 'Original title',
+			description: 'Original description',
+			dueDate: new Date('2024-12-31'),
+			status: TaskStatus.CREATED,
+			completedAt: null,
+			projectId: 10,
+			createUserId: userId,
+			executorUserId: 2,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		it('should successfully update task when user is creator', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockExistingTask);
+			TasksRepositoryMock.update.mockResolvedValue(undefined);
+
+			await tasksService.updateTask(userId, taskId, updateTaskData);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.UPDATE_TASK,
+			);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.update).toHaveBeenCalledWith(taskId, {
+				title: updateTaskData.title,
+				description: updateTaskData.description,
+				dueDate: updateTaskData.dueDate,
+				status: updateTaskData.status,
+				executorUserId: updateTaskData.executorUserId,
+			});
+		});
+
+		it('should successfully update task when executorUserId is set to undefined', async () => {
+			const updateDataWithUndefinedExecutor = {
+				...updateTaskData,
+				executorUserId: undefined,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockExistingTask);
+			TasksRepositoryMock.update.mockResolvedValue(undefined);
+
+			await tasksService.updateTask(userId, taskId, updateDataWithUndefinedExecutor);
+
+			expect(TasksRepositoryMock.update).toHaveBeenCalledWith(taskId, {
+				title: updateDataWithUndefinedExecutor.title,
+				description: updateDataWithUndefinedExecutor.description,
+				dueDate: updateDataWithUndefinedExecutor.dueDate,
+				status: updateDataWithUndefinedExecutor.status,
+				executorUserId: undefined,
+			});
+		});
+
+		it('should update task without changing optional fields when they are not provided', async () => {
+			const minimalUpdateData = {
+				title: 'Only title updated',
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockExistingTask);
+			TasksRepositoryMock.update.mockResolvedValue(undefined);
+
+			await tasksService.updateTask(userId, taskId, minimalUpdateData);
+
+			expect(TasksRepositoryMock.update).toHaveBeenCalledWith(taskId, {
+				title: 'Only title updated',
+				description: undefined,
+				dueDate: undefined,
+				status: undefined,
+				executorUserId: undefined,
+			});
+		});
+
+		it('should throw error when user does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockRejectedValueOnce(
+				new HttpError(
+					HttpErrorCode.NOT_FOUND,
+					USERS_MESSAGES.USER_NOT_FOUND,
+					TASKS_PATHS.UPDATE_TASK,
+				),
+			);
+
+			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.UPDATE_TASK,
+			);
+			expect(TasksRepositoryMock.findById).not.toHaveBeenCalled();
+			expect(TasksRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when task does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalled();
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when user is not the creator of the task', async () => {
+			const anotherUserId = 99;
+			const taskWithDifferentCreator: TaskModel = {
+				...mockExistingTask,
+				createUserId: 50,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithDifferentCreator);
+
+			await expect(tasksService.updateTask(anotherUserId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				anotherUserId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.UPDATE_TASK,
+			);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.update).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when repository update fails', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockExistingTask);
+			TasksRepositoryMock.update.mockRejectedValue(new Error('Database error'));
+
+			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalled();
+			expect(TasksRepositoryMock.findById).toHaveBeenCalled();
+			expect(TasksRepositoryMock.update).toHaveBeenCalled();
+		});
+
 	});
 });

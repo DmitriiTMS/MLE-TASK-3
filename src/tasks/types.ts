@@ -47,7 +47,7 @@ export interface ITaskResponse {
 export interface IUpdateTaskData {
 	title?: string;
 	description?: string | null;
-	dueDate?: Date;
+	dueDate?: Date | string;
 	status?: TaskStatus;
 	executorUserId?: number | null;
 }

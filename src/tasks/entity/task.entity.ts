@@ -148,13 +148,13 @@ export class TaskEntity {
 	updateFields(updates: {
 		title?: string;
 		description?: string | null;
-		dueDate?: Date;
+		dueDate?: Date | string;
 		status?: TaskStatus;
 		executorUserId?: number | null;
 	}): Partial<{
 		title: string;
 		description: string | null;
-		dueDate: Date;
+		dueDate: Date | string;
 		status: TaskStatus;
 		executorUserId: number | null;
 		completedAt: Date | null;
@@ -162,7 +162,7 @@ export class TaskEntity {
 		const result: Partial<{
 			title: string;
 			description: string | null;
-			dueDate: Date;
+			dueDate: Date | string;
 			status: TaskStatus;
 			executorUserId: number | null;
 			completedAt: Date | null;

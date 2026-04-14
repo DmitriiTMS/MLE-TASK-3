@@ -13,6 +13,7 @@ import { TaskIdDto } from './dto/taskId.dto';
 import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TasksService } from './tasks.service';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 @injectable()
 export class TasksController extends BaseController implements ITasksController {
@@ -33,6 +34,17 @@ export class TasksController extends BaseController implements ITasksController 
 					new ValidateMiddleware(logger, TaskIdDto, 'params'),
 				],
 			},
+			{
+				path: TASKS_PATHS.UPDATE_TASK,
+				method: 'put',
+				func: this.update,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, TaskIdDto, 'params'),
+					new ValidateMiddleware(logger, UpdateTaskDto, 'body'),
+				],
+			},
+
 		]);
 	}
 
@@ -54,5 +66,25 @@ export class TasksController extends BaseController implements ITasksController 
 		const { userId } = req.user;
 		const task = await this.tasksService.getOneTask(userId, taskId);
 		this.ok(res, task.toResponse());
+	}
+
+	async update(
+		req: Request<{ taskId: string }, object, UpdateTaskDto>,
+		res: Response,
+		next: NextFunction,
+	) {
+		const taskId = parseInt(req.params.taskId);
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					TASKS_PATHS.GET_ONE_TASK,
+				),
+			);
+		}
+		const { userId } = req.user;
+		await this.tasksService.updateTask(userId, taskId, req.body)
+		this.noContent(res, {});
 	}
 }

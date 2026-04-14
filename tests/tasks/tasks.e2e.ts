@@ -328,7 +328,7 @@ describe('TasksController', () => {
         let taskId: number;
 
         beforeEach(async () => {
-          
+
             const registerResponse = await request(application.app)
                 .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
                 .send(testUser);
@@ -456,6 +456,340 @@ describe('TasksController', () => {
                 .get(`${BASE_TASKS_PATH}${TASKS_PATHS.GET_ONE_TASK.replace(':taskId', 'invalid')}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(400);
+        });
+    });
+
+    describe(`PUT ${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK} - update task`, () => {
+        let taskId: number;
+        let taskIdWithoutExecutor: number;
+
+        beforeEach(async () => {
+            // Очистка перед каждым тестом
+            await prismaService.client.taskModel.deleteMany();
+            await prismaService.client.projectModel.deleteMany();
+            await prismaService.client.userModel.deleteMany();
+
+            // Регистрация создателя
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+            // Регистрация исполнителя
+            const executorRegisterResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testExecutor);
+
+            executorAuthToken = executorRegisterResponse.body.accessToken;
+            executorUserId = executorRegisterResponse.body.id;
+
+            // Создание проекта
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(validProject)
+                .expect(201);
+
+            projectId = projectResponse.body.projectId;
+
+            // Создание задачи с исполнителем
+            const taskData = {
+                title: validTask.title,
+                description: validTask.description,
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+                executorUserId: executorUserId,
+            };
+
+            const taskResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskData)
+                .expect(201);
+
+            taskId = taskResponse.body.taskId;
+
+            // Создание задачи без исполнителя
+            const taskDataWithoutExecutor = {
+                title: 'Task without executor',
+                description: 'Description',
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+            };
+
+            const taskWithoutExecutorResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskDataWithoutExecutor)
+                .expect(201);
+
+            taskIdWithoutExecutor = taskWithoutExecutorResponse.body.taskId;
+        });
+
+        it('should successfully update task title when user is creator', async () => {
+            const updateData = {
+                title: 'Updated Task Title',
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.title).toBe(updateData.title);
+            expect(updatedTask?.description).toBe(validTask.description);
+            expect(updatedTask?.status).toBe(TaskStatus.CREATED);
+        });
+
+        it('should successfully update task description when user is creator', async () => {
+            const updateData = {
+                description: 'Updated description text',
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.description).toBe(updateData.description);
+            expect(updatedTask?.title).toBe(validTask.title);
+        });
+
+        it('should successfully update task dueDate when user is creator', async () => {
+            const updateData = {
+                dueDate: '2025-12-31T00:00:00.000Z',
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.dueDate).toEqual(new Date(updateData.dueDate));
+        });
+
+        it('should successfully update task status when user is creator', async () => {
+            const updateData = {
+                status: TaskStatus.IN_PROGRESS,
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.status).toBe(TaskStatus.IN_PROGRESS);
+        });
+
+        it('should successfully update task executor when user is creator', async () => {
+            // Создаём ещё одного пользователя для назначения исполнителем
+            const newExecutor = {
+                name: 'newExecutor',
+                email: 'newExecutor@bk.ru',
+                password: '1234',
+            };
+
+            const newExecutorResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(newExecutor);
+
+            const newExecutorId = newExecutorResponse.body.id;
+
+            const updateData = {
+                executorUserId: newExecutorId,
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.executorUserId).toBe(newExecutorId);
+        });
+
+        it('should successfully update multiple fields at once when user is creator', async () => {
+            const updateData = {
+                title: 'New Title',
+                description: 'New Description',
+                dueDate: '2025-06-30T00:00:00.000Z',
+                status: TaskStatus.COMPLETED,
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.title).toBe(updateData.title);
+            expect(updatedTask?.description).toBe(updateData.description);
+            expect(updatedTask?.dueDate).toEqual(new Date(updateData.dueDate));
+            expect(updatedTask?.status).toBe(TaskStatus.COMPLETED);
+        });
+
+        it('should return 401 when no authorization token provided', async () => {
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .send({ title: 'New Title' })
+                .expect(401);
+        });
+
+        it('should return 401 when invalid token provided', async () => {
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', 'Bearer invalid-token')
+                .send({ title: 'New Title' })
+                .expect(401);
+        });
+
+        it('should return 404 when task does not exist', async () => {
+            const nonExistentTaskId = 99999;
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', nonExistentTaskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ title: 'New Title' })
+                .expect(404);
+        });
+
+        it('should return 403 when user is not the creator of the task', async () => {
+            // Используем токен исполнителя (не создателя)
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${executorAuthToken}`)
+                .send({ title: 'New Title' })
+                .expect(403);
+        });
+
+        it('should return 400 when taskId is not a number', async () => {
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', 'invalid')}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ title: 'New Title' })
+                .expect(400);
+        });
+
+        it('should return 400 when dueDate has invalid format', async () => {
+            const updateData = {
+                dueDate: 'invalid-date',
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+        });
+
+        it('should return 400 when status is invalid', async () => {
+            const updateData = {
+                status: 'INVALID_STATUS',
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(400);
+        });
+
+        it('should successfully update executorUserId to null (remove executor)', async () => {
+            const updateData = {
+                executorUserId: null,
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.executorUserId).toBeNull();
+        });
+
+        it('should successfully update description to null', async () => {
+            const updateData = {
+                description: null,
+            };
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskIdWithoutExecutor.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(updateData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskIdWithoutExecutor }
+            });
+
+            expect(updatedTask?.description).toBeNull();
+        });
+
+        it('should return 204 with empty body when update is successful', async () => {
+            const response = await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ title: 'Updated Title' })
+                .expect(204);
+
+            expect(response.body).toEqual({});
+        });
+
+        it('should not change other fields when updating only one field', async () => {
+            const originalTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            await request(application.app)
+                .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ title: 'Only Title Changed' })
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(updatedTask?.title).toBe('Only Title Changed');
+            expect(updatedTask?.description).toBe(originalTask?.description);
+            expect(updatedTask?.dueDate).toEqual(originalTask?.dueDate);
+            expect(updatedTask?.status).toBe(originalTask?.status);
+            expect(updatedTask?.executorUserId).toBe(originalTask?.executorUserId);
         });
     });
 });
