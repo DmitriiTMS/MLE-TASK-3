@@ -7,5 +7,6 @@ export interface ITasksService {
 	getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel>;
 	createTask(data: ICreateTaskData): Promise<TaskEntity>;
 	getOneTask(userId: number, taskId: number): Promise<TaskEntity>;
-	updateTask(userId: number, taskId: number, data: UpdateTaskDto): Promise<void>
+	updateTask(userId: number, taskId: number, data: UpdateTaskDto): Promise<void>;
+	remove(taskId: number, userId: number): Promise<void>;
 }

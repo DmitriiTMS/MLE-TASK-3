@@ -604,7 +604,6 @@ describe('TasksController', () => {
         });
 
         it('should successfully update task executor when user is creator', async () => {
-            // Создаём ещё одного пользователя для назначения исполнителем
             const newExecutor = {
                 name: 'newExecutor',
                 email: 'newExecutor@bk.ru',
@@ -684,7 +683,7 @@ describe('TasksController', () => {
         });
 
         it('should return 403 when user is not the creator of the task', async () => {
-            // Используем токен исполнителя (не создателя)
+
             await request(application.app)
                 .put(`${BASE_TASKS_PATH}${TASKS_PATHS.UPDATE_TASK.replace(':taskId', taskId.toString())}`)
                 .set('Authorization', `Bearer ${executorAuthToken}`)
@@ -790,6 +789,213 @@ describe('TasksController', () => {
             expect(updatedTask?.dueDate).toEqual(originalTask?.dueDate);
             expect(updatedTask?.status).toBe(originalTask?.status);
             expect(updatedTask?.executorUserId).toBe(originalTask?.executorUserId);
+        });
+    });
+
+    describe(`DELETE ${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK} - delete task`, () => {
+        let taskId: number;
+
+        beforeEach(async () => {
+
+            await prismaService.client.taskModel.deleteMany();
+            await prismaService.client.projectModel.deleteMany();
+            await prismaService.client.userModel.deleteMany();
+
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+
+            const executorRegisterResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testExecutor);
+
+            executorAuthToken = executorRegisterResponse.body.accessToken;
+            executorUserId = executorRegisterResponse.body.id;
+
+
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(validProject)
+                .expect(201);
+
+            projectId = projectResponse.body.projectId;
+
+
+            const taskData = {
+                title: validTask.title,
+                description: validTask.description,
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+                executorUserId: executorUserId,
+            };
+
+            const taskResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskData)
+                .expect(201);
+
+            taskId = taskResponse.body.taskId;
+        });
+
+        it('should successfully delete task when user is creator', async () => {
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            const deletedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+
+            expect(deletedTask).toBeNull();
+        });
+
+        it('should return 401 when no authorization token provided', async () => {
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .expect(401);
+        });
+
+        it('should return 401 when invalid token provided', async () => {
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', 'Bearer invalid-token')
+                .expect(401);
+        });
+
+        it('should return 404 when task does not exist', async () => {
+            const nonExistentTaskId = 99999;
+
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', nonExistentTaskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+        });
+
+        it('should return 403 when user is not the creator of the task', async () => {
+
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${executorAuthToken}`)
+                .expect(403);
+        });
+
+        it('should return 400 when taskId is not a number', async () => {
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', 'invalid')}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(400);
+        });
+
+        it('should return 204 with empty body when deletion is successful', async () => {
+            const response = await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+        });
+
+        it('should successfully delete task without executor (executorUserId is null)', async () => {
+
+            const taskDataWithoutExecutor = {
+                title: 'Task without executor',
+                description: 'Description',
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+            };
+
+            const taskWithoutExecutorResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskDataWithoutExecutor)
+                .expect(201);
+
+            const taskWithoutExecutorId = taskWithoutExecutorResponse.body.taskId;
+
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskWithoutExecutorId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            const deletedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskWithoutExecutorId }
+            });
+
+            expect(deletedTask).toBeNull();
+        });
+
+        it('should successfully delete task without description', async () => {
+
+            const taskDataWithoutDescription = {
+                title: 'Task without description',
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+                executorUserId: executorUserId,
+            };
+
+            const taskWithoutDescriptionResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskDataWithoutDescription)
+                .expect(201);
+
+            const taskWithoutDescriptionId = taskWithoutDescriptionResponse.body.taskId;
+
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskWithoutDescriptionId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            const deletedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskWithoutDescriptionId }
+            });
+
+            expect(deletedTask).toBeNull();
+        });
+
+        it('should return 404 when trying to delete already deleted task', async () => {
+
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(204);
+
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(404);
+        });
+
+        it('should not delete task when user is not authenticated', async () => {
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .expect(401);
+
+
+            const task = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+            expect(task).toBeDefined();
+        });
+
+        it('should not delete task when user is executor but not creator', async () => {
+            await request(application.app)
+                .delete(`${BASE_TASKS_PATH}${TASKS_PATHS.DELETE_TASK.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${executorAuthToken}`)
+                .expect(403);
+
+
+            const task = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId }
+            });
+            expect(task).toBeDefined();
         });
     });
 });

@@ -36,6 +36,7 @@ const TasksRepositoryMock = {
 	create: jest.fn(),
 	findById: jest.fn(),
 	update: jest.fn(),
+	remove: jest.fn(),
 } as jest.Mocked<ITasksRepository>;
 
 describe('TasksService', () => {
@@ -542,7 +543,9 @@ describe('TasksService', () => {
 				),
 			);
 
-			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(
+				HttpError,
+			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
@@ -557,7 +560,9 @@ describe('TasksService', () => {
 			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
 			TasksRepositoryMock.findById.mockResolvedValue(null);
 
-			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(
+				HttpError,
+			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalled();
 			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
@@ -574,7 +579,9 @@ describe('TasksService', () => {
 			UserServiceMock.getUserOrThrow.mockResolvedValue(mockCreatorUser);
 			TasksRepositoryMock.findById.mockResolvedValue(taskWithDifferentCreator);
 
-			await expect(tasksService.updateTask(anotherUserId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+			await expect(tasksService.updateTask(anotherUserId, taskId, updateTaskData)).rejects.toThrow(
+				HttpError,
+			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				anotherUserId,
@@ -590,12 +597,203 @@ describe('TasksService', () => {
 			TasksRepositoryMock.findById.mockResolvedValue(mockExistingTask);
 			TasksRepositoryMock.update.mockRejectedValue(new Error('Database error'));
 
-			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(HttpError);
+			await expect(tasksService.updateTask(userId, taskId, updateTaskData)).rejects.toThrow(
+				HttpError,
+			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalled();
 			expect(TasksRepositoryMock.findById).toHaveBeenCalled();
 			expect(TasksRepositoryMock.update).toHaveBeenCalled();
 		});
+	});
 
+	describe('remove', () => {
+		const userId = 1;
+		const taskId = 100;
+
+		const mockUser = {
+			id: 1,
+			name: 'user',
+			email: 'user@bk.ru',
+			hasPassword: 'hashedPassword',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const mockTaskData: TaskModel = {
+			id: taskId,
+			title: 'task-title',
+			description: 'task-description',
+			dueDate: new Date('2024-12-31'),
+			status: TaskStatus.CREATED,
+			completedAt: null,
+			projectId: 10,
+			createUserId: userId,
+			executorUserId: 2,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		it('should successfully remove task when user is creator', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockTaskData);
+			TasksRepositoryMock.remove.mockResolvedValue(undefined);
+
+			await tasksService.remove(taskId, userId);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.DELETE_TASK,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.remove).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).toHaveBeenCalledTimes(1);
+		});
+
+		it('should throw error when user does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockRejectedValue(
+				new HttpError(
+					HttpErrorCode.NOT_FOUND,
+					USERS_MESSAGES.USER_NOT_FOUND,
+					TASKS_PATHS.DELETE_TASK,
+				),
+			);
+
+			await expect(tasksService.remove(taskId, userId)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.DELETE_TASK,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).not.toHaveBeenCalled();
+			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when task does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(tasksService.remove(taskId, userId)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when user is not the creator of the task', async () => {
+			const anotherUserId = 99;
+			const taskWithDifferentCreator: TaskModel = {
+				...mockTaskData,
+				createUserId: 50,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithDifferentCreator);
+
+			await expect(tasksService.remove(taskId, anotherUserId)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				anotherUserId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.DELETE_TASK,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when user is not the creator of the task', async () => {
+			const anotherUserId = 99;
+			const taskWithDifferentCreator: TaskModel = {
+				...mockTaskData,
+				createUserId: 50,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithDifferentCreator);
+
+			await expect(tasksService.remove(taskId, anotherUserId)).rejects.toThrow(
+				TASKS_MESSAGES.TASK_BAN_ON_DELETE,
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				anotherUserId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.DELETE_TASK,
+			);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when task does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(tasksService.remove(taskId, userId)).rejects.toThrow(
+				TASKS_MESSAGES.TASK_NOT_FOUND,
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				TASKS_PATHS.DELETE_TASK,
+			);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
+
+		it('should successfully remove task even when executorUserId is null', async () => {
+			const taskWithoutExecutor: TaskModel = {
+				...mockTaskData,
+				executorUserId: null,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithoutExecutor);
+			TasksRepositoryMock.remove.mockResolvedValue(undefined);
+
+			await tasksService.remove(taskId, userId);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).toHaveBeenCalledTimes(1);
+		});
+
+		it('should successfully remove task when description is null', async () => {
+			const taskWithoutDescription: TaskModel = {
+				...mockTaskData,
+				description: null,
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(taskWithoutDescription);
+			TasksRepositoryMock.remove.mockResolvedValue(undefined);
+
+			await tasksService.remove(taskId, userId);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).toHaveBeenCalledTimes(1);
+		});
+
+		it('should throw error when taskId is invalid (repository returns null)', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			TasksRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(tasksService.remove(taskId, userId)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
 	});
 });

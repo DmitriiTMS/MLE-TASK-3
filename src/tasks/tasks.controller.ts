@@ -45,6 +45,15 @@ export class TasksController extends BaseController implements ITasksController 
 				],
 			},
 
+			{
+				path: TASKS_PATHS.DELETE_TASK,
+				method: 'delete',
+				func: this.remove,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, TaskIdDto, 'params'),
+				],
+			},
 		]);
 	}
 
@@ -72,7 +81,7 @@ export class TasksController extends BaseController implements ITasksController 
 		req: Request<{ taskId: string }, object, UpdateTaskDto>,
 		res: Response,
 		next: NextFunction,
-	) {
+	): Promise<void> {
 		const taskId = parseInt(req.params.taskId);
 		if (!req.user?.userId) {
 			return next(
@@ -84,7 +93,29 @@ export class TasksController extends BaseController implements ITasksController 
 			);
 		}
 		const { userId } = req.user;
-		await this.tasksService.updateTask(userId, taskId, req.body)
+		await this.tasksService.updateTask(userId, taskId, req.body);
+		this.noContent(res, {});
+	}
+
+	async remove(
+		req: Request<{ taskId: string }, object, object>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					TASKS_PATHS.DELETE_TASK,
+				),
+			);
+		}
+		const { userId } = req.user;
+		const taskId = parseInt(req.params.taskId);
+
+		await this.tasksService.remove(taskId, userId);
+
 		this.noContent(res, {});
 	}
 }

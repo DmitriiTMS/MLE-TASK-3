@@ -8,7 +8,7 @@ import { TaskModel } from '@prisma/client';
 
 @injectable()
 export class TasksRepository implements ITasksRepository {
-	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) { }
+	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) {}
 
 	async create(data: ICreateTaskData): Promise<TaskModel> {
 		try {
@@ -54,11 +54,17 @@ export class TasksRepository implements ITasksRepository {
 					description: data.description,
 					dueDate: data.dueDate,
 					status: data.status,
-					executorUserId: data.executorUserId
+					executorUserId: data.executorUserId,
 				},
 			});
 		} catch (error) {
 			throw error;
 		}
+	}
+
+	async remove(taskId: number): Promise<void> {
+		await this.prismaService.client.taskModel.delete({
+			where: { id: taskId },
+		});
 	}
 }

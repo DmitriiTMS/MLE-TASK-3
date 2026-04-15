@@ -21,7 +21,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
-	) { }
+	) {}
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
@@ -122,7 +122,7 @@ export class TasksService implements ITasksService {
 				description: updatedTask.description,
 				dueDate: updatedTask.dueDate,
 				status: updatedTask.status,
-				executorUserId: updatedTask.executorUserId
+				executorUserId: updatedTask.executorUserId,
 			});
 		} catch (error) {
 			throw new HttpError(
@@ -131,6 +131,29 @@ export class TasksService implements ITasksService {
 				PROJECTS_PATH.UPDATE_PROJECT,
 			);
 		}
+	}
+
+	async remove(taskId: number, userId: number): Promise<void> {
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			TASKS_PATHS.DELETE_TASK,
+		);
+		const taskData = await this.getTaskOrThrow(
+			taskId,
+			TASKS_MESSAGES.TASK_NOT_FOUND,
+			TASKS_PATHS.DELETE_TASK,
+		);
+		const task = TaskEntity.fromDatabase(taskData);
+		if (!task.isCreatorUser(userId)) {
+			throw new HttpError(
+				HttpErrorCode.FORBIDDEN,
+				TASKS_MESSAGES.TASK_BAN_ON_DELETE,
+				TASKS_PATHS.DELETE_TASK,
+			);
+		}
+
+		await this.tasksRepository.remove(taskId);
 	}
 
 	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {

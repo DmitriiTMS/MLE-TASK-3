@@ -5,4 +5,5 @@ export interface ITasksRepository {
 	create(data: ICreateTaskData): Promise<TaskModel>;
 	findById(taskId: number): Promise<TaskModel | null>;
 	update(taskId: number, data: IUpdateTaskData): Promise<void>;
+	remove(taskId: number): Promise<void>;
 }
