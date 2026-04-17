@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { ITasksService } from './tasks.service.interface';
 import { TYPES } from '../common/types/types';
 import { ITasksRepository } from './tasks.reposotory.interface';
-import { ICreateTaskData } from './types';
+import { ICreateTaskData, IUpdateAssignUserService } from './types';
 import { TaskEntity } from './entity/task.entity';
 import { IUserService } from '../users/user.service.interface';
 import { PROJECTS_MESSAGES, PROJECTS_PATH } from '../projects/constants';
@@ -154,6 +154,36 @@ export class TasksService implements ITasksService {
 		}
 
 		await this.tasksRepository.remove(taskId);
+	}
+
+	async assignTaskUser(data: IUpdateAssignUserService): Promise<void> {
+		await this.userService.getUserOrThrow(
+			data.userId,
+			USERS_MESSAGES.USER_NOT_FOUND_CREATER,
+			TASKS_PATHS.ASSIGN_TASK_USER,
+		);
+		await this.userService.getUserOrThrow(
+			data.info.executorUserId,
+			USERS_MESSAGES.USER_NOT_FOUND_EXECUTOR,
+			TASKS_PATHS.ASSIGN_TASK_USER,
+		);
+
+		const taskData = await this.getTaskOrThrow(
+			data.info.taskId,
+			TASKS_MESSAGES.TASK_NOT_FOUND,
+			TASKS_PATHS.ASSIGN_TASK_USER,
+		);
+
+		const task = TaskEntity.fromDatabase(taskData);
+
+		if (!task.isCreatorUser(data.userId) && data.userId === data.info.executorUserId) {
+			throw new HttpError(
+				HttpErrorCode.FORBIDDEN,
+				TASKS_MESSAGES.BAN_ON_ASSIGN_TASK_USER,
+				TASKS_PATHS.ASSIGN_TASK_USER,
+			);
+		}
+		await this.tasksRepository.assignTaskUser(data.info);
 	}
 
 	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {

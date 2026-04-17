@@ -51,3 +51,13 @@ export interface IUpdateTaskData {
 	status?: TaskStatus;
 	executorUserId?: number | null;
 }
+
+export interface IUpdateAssignUserRepository {
+	taskId: number;
+	executorUserId: number;
+}
+
+export interface IUpdateAssignUserService {
+	userId: number;
+	info: IUpdateAssignUserRepository;
+}

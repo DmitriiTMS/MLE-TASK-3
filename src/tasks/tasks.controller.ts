@@ -14,6 +14,7 @@ import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TasksService } from './tasks.service';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { ExecutorIdUserDto } from './dto/executor-id.dto';
 
 @injectable()
 export class TasksController extends BaseController implements ITasksController {
@@ -52,6 +53,17 @@ export class TasksController extends BaseController implements ITasksController 
 				middlewares: [
 					new AuthMiddleware(this.jwtService, logger),
 					new ValidateMiddleware(logger, TaskIdDto, 'params'),
+				],
+			},
+
+			{
+				path: TASKS_PATHS.ASSIGN_TASK_USER,
+				method: 'patch',
+				func: this.assignTaskUser,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, TaskIdDto, 'params'),
+					new ValidateMiddleware(logger, ExecutorIdUserDto, 'body'),
 				],
 			},
 		]);
@@ -115,6 +127,33 @@ export class TasksController extends BaseController implements ITasksController 
 		const taskId = parseInt(req.params.taskId);
 
 		await this.tasksService.remove(taskId, userId);
+
+		this.noContent(res, {});
+	}
+
+	async assignTaskUser(
+		req: Request<{ taskId: string }, object, ExecutorIdUserDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		const taskId = parseInt(req.params.taskId);
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					TASKS_PATHS.GET_ONE_TASK,
+				),
+			);
+		}
+		const { userId } = req.user;
+		await this.tasksService.assignTaskUser({
+			userId,
+			info: {
+				taskId,
+				executorUserId: req.body.executorUserId,
+			},
+		});
 
 		this.noContent(res, {});
 	}

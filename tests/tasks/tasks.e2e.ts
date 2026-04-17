@@ -7,7 +7,7 @@ import request from 'supertest';
 import { BASE_PROJECTS_PATH, PROJECTS_PATH } from '../../src/projects/constants';
 import { AUTH_PATHS, BASE_AUTH_PATH } from '../../src/auth/constants';
 import { TaskStatus } from '@prisma/client';
-import { BASE_TASKS_PATH, TASKS_PATHS } from '../../src/tasks/constants';
+import { BASE_TASKS_PATH, TASKS_MESSAGES, TASKS_PATHS } from '../../src/tasks/constants';
 
 
 // npm run test:e2e -- tests/tasks/tasks.e2e.ts
@@ -996,6 +996,403 @@ describe('TasksController', () => {
                 where: { id: taskId }
             });
             expect(task).toBeDefined();
+        });
+    });
+
+    describe(`PATCH ${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER} - assign task user`, () => {
+        let taskId: number;
+        let taskIdWithDifferentCreator: number;
+        let anotherUserId: number;
+        let anotherUserToken: string;
+
+        beforeEach(async () => {
+            // Очистка в правильном порядке (сначала задачи, потом проекты, потом пользователи)
+            await prismaService.client.taskModel.deleteMany();
+            await prismaService.client.projectModel.deleteMany();
+            await prismaService.client.userModel.deleteMany();
+
+            // Регистрация создателя
+            const registerResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testUser);
+
+            authToken = registerResponse.body.accessToken;
+            userId = registerResponse.body.id;
+
+            // Регистрация исполнителя
+            const executorRegisterResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(testExecutor);
+
+            executorAuthToken = executorRegisterResponse.body.accessToken;
+            executorUserId = executorRegisterResponse.body.id;
+
+            // Регистрация другого пользователя (не создатель, не исполнитель)
+            const anotherUser = {
+                name: 'another',
+                email: 'another@bk.ru',
+                password: '9012',
+            };
+
+            const anotherUserResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(anotherUser);
+
+            anotherUserId = anotherUserResponse.body.id;
+            anotherUserToken = anotherUserResponse.body.accessToken;
+
+            // Создание проекта
+            const projectResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(validProject)
+                .expect(201);
+
+            projectId = projectResponse.body.projectId;
+
+            // Создание задачи (создатель - userId)
+            const taskData = {
+                title: validTask.title,
+                description: validTask.description,
+                dueDate: validTask.dueDate,
+                status: TaskStatus.CREATED,
+                executorUserId: null,
+            };
+
+            const taskResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', projectId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(taskData)
+                .expect(201);
+
+            taskId = taskResponse.body.taskId;
+
+            // Создание задачи с другим создателем (для тестов с чужим создателем)
+            const projectForAnotherResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${anotherUserToken}`)
+                .send(validProject)
+                .expect(201);
+
+            const anotherProjectId = projectForAnotherResponse.body.projectId;
+
+            const taskForAnotherResponse = await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE_TASKS_FOR_PROJECT.replace(':projectId', anotherProjectId.toString())}`)
+                .set('Authorization', `Bearer ${anotherUserToken}`)
+                .send({
+                    title: 'Another user task',
+                    description: 'Description',
+                    dueDate: validTask.dueDate,
+                    status: TaskStatus.CREATED,
+                    executorUserId: null,
+                })
+                .expect(201);
+
+            taskIdWithDifferentCreator = taskForAnotherResponse.body.taskId;
+        });
+
+        it('should successfully assign executor when user is creator', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+
+            expect(updatedTask?.executorUserId).toBe(executorUserId);
+        });
+
+        it('should successfully assign executor when user is not creator but assigns another user (allowed)', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            // anotherUser пытается назначить executorUserId на чужую задачу (создатель - userId)
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${anotherUserToken}`)
+                .send(assignData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+
+            // Ожидаем, что назначение прошло успешно (не создатель может назначать другого)
+            expect(updatedTask?.executorUserId).toBe(executorUserId);
+        });
+
+        it('should successfully assign executor when executor assigns another user (executor not creator)', async () => {
+            // Сначала создатель назначает исполнителя
+            const initialAssignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(initialAssignData)
+                .expect(204);
+
+            // Регистрируем нового исполнителя
+            const newExecutor = {
+                name: 'newExecutor',
+                email: 'newExecutor@bk.ru',
+                password: '1111',
+            };
+
+            const newExecutorResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(newExecutor);
+
+            const newExecutorId = newExecutorResponse.body.id;
+            const newExecutorToken = newExecutorResponse.body.accessToken;
+
+            const reassignData = {
+                executorUserId: newExecutorId,
+            };
+
+            // Исполнитель (не создатель) назначает другого исполнителя - разрешено
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${executorAuthToken}`)
+                .send(reassignData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+
+            expect(updatedTask?.executorUserId).toBe(newExecutorId);
+        });
+
+        it('should return 403 FORBIDDEN when user is not creator and tries to assign themselves', async () => {
+            // Создаем пользователя, который НЕ является создателем задачи
+            const nonCreatorUser = {
+                name: 'nonCreator',
+                email: 'noncreator-assign@bk.ru',
+                password: 'noncreator123',
+            };
+
+            const nonCreatorResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(nonCreatorUser);
+
+            const nonCreatorId = nonCreatorResponse.body.id;
+            const nonCreatorToken = nonCreatorResponse.body.accessToken;
+
+            // Пытаемся назначить СЕБЯ (nonCreatorId) на задачу, созданную другим пользователем
+            const assignData = {
+                executorUserId: nonCreatorId, // пытается назначить себя
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskIdWithDifferentCreator.toString())}`)
+                .set('Authorization', `Bearer ${nonCreatorToken}`)
+                .send(assignData)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message');
+            expect(response.body.message).toBe(TASKS_MESSAGES.BAN_ON_ASSIGN_TASK_USER);
+
+            // Проверяем, что исполнитель не изменился
+            const task = await prismaService.client.taskModel.findFirst({
+                where: { id: taskIdWithDifferentCreator },
+            });
+
+            expect(task?.executorUserId).toBeNull();
+        });
+        it('should return 401 when no authorization token provided', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .send(assignData)
+                .expect(401);
+        });
+
+        it('should return 401 when invalid token provided', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', 'Bearer invalid-token')
+                .send(assignData)
+                .expect(401);
+        });
+
+        it('should return 404 when task does not exist', async () => {
+            const nonExistentTaskId = 99999;
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', nonExistentTaskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(404);
+        });
+
+        it('should return 400 when taskId is not a number', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', 'invalid')}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(400);
+        });
+
+        it('should return 400 when executorUserId is missing in body', async () => {
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({})
+                .expect(400);
+        });
+
+        it('should return 400 when executorUserId is not a number', async () => {
+            const assignData = {
+                executorUserId: 'not-a-number',
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(400);
+        });
+
+        it('should return 404 when executor user does not exist', async () => {
+            const assignData = {
+                executorUserId: 99999,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(404);
+        });
+
+        it('should return 204 with empty body when assignment is successful', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            const response = await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(204);
+
+            expect(response.body).toEqual({});
+        });
+
+        it('should successfully reassign executor to another user', async () => {
+            // Первое назначение
+            const firstAssignData = {
+                executorUserId: executorUserId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(firstAssignData)
+                .expect(204);
+
+            // Регистрируем нового исполнителя
+            const newExecutor = {
+                name: 'secondExecutor',
+                email: 'secondExecutor@bk.ru',
+                password: '2222',
+            };
+
+            const newExecutorResponse = await request(application.app)
+                .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
+                .send(newExecutor);
+
+            const newExecutorId = newExecutorResponse.body.id;
+
+            // Переназначение
+            const reassignData = {
+                executorUserId: newExecutorId,
+            };
+
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(reassignData)
+                .expect(204);
+
+            const updatedTask = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+
+            expect(updatedTask?.executorUserId).toBe(newExecutorId);
+        });
+
+        it('should successfully assign executor when task had no executor before', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            // Проверяем, что изначально исполнителя нет
+            let task = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+            expect(task?.executorUserId).toBeNull();
+
+            // Назначаем исполнителя
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(204);
+
+            task = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+            expect(task?.executorUserId).toBe(executorUserId);
+        });
+
+        it('should successfully assign executor when executor is the same as current (idempotent)', async () => {
+            const assignData = {
+                executorUserId: executorUserId,
+            };
+
+            // Первое назначение
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(204);
+
+            // Повторное назначение того же исполнителя
+            await request(application.app)
+                .patch(`${BASE_TASKS_PATH}${TASKS_PATHS.ASSIGN_TASK_USER.replace(':taskId', taskId.toString())}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send(assignData)
+                .expect(204);
+
+            const task = await prismaService.client.taskModel.findFirst({
+                where: { id: taskId },
+            });
+            expect(task?.executorUserId).toBe(executorUserId);
         });
     });
 });

@@ -37,6 +37,7 @@ const TasksRepositoryMock = {
 	findById: jest.fn(),
 	update: jest.fn(),
 	remove: jest.fn(),
+	assignTaskUser: jest.fn(),
 } as jest.Mocked<ITasksRepository>;
 
 describe('TasksService', () => {
@@ -794,6 +795,194 @@ describe('TasksService', () => {
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
 			expect(TasksRepositoryMock.remove).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('assignTaskUser', () => {
+		const userId = 1;
+		const taskId = 100;
+		const executorUserId = 2;
+
+		const mockUser = {
+			id: userId,
+			name: 'user',
+			email: 'user@bk.ru',
+			hasPassword: 'hashedPassword',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const mockExecutorUser = {
+			id: executorUserId,
+			name: 'executor',
+			email: 'executor@bk.ru',
+			hasPassword: 'hashedPassword',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const mockTaskData: TaskModel = {
+			id: taskId,
+			title: 'task-title',
+			description: 'task-description',
+			dueDate: new Date('2024-12-31'),
+			status: TaskStatus.CREATED,
+			completedAt: null,
+			projectId: 10,
+			createUserId: userId,
+			executorUserId: null,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		const assignTaskUserData = {
+			userId: userId,
+			info: {
+				taskId: taskId,
+				executorUserId: executorUserId,
+			},
+		};
+
+		it('should successfully assign task when user is creator', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockUser);
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockExecutorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockTaskData);
+			TasksRepositoryMock.assignTaskUser.mockResolvedValue(undefined);
+
+			await tasksService.assignTaskUser(assignTaskUserData);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenNthCalledWith(
+				1,
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND_CREATER,
+				TASKS_PATHS.ASSIGN_TASK_USER,
+			);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenNthCalledWith(
+				2,
+				executorUserId,
+				USERS_MESSAGES.USER_NOT_FOUND_EXECUTOR,
+				TASKS_PATHS.ASSIGN_TASK_USER,
+			);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.assignTaskUser).toHaveBeenCalledWith({
+				taskId: taskId,
+				executorUserId: executorUserId,
+			});
+		});
+
+		it('should successfully assign task when user is not creator but assigns another executor', async () => {
+			const nonCreatorUserId = 99;
+			const assignData = {
+				userId: nonCreatorUserId,
+				info: {
+					taskId: taskId,
+					executorUserId: executorUserId,
+				},
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce({ ...mockUser, id: nonCreatorUserId });
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockExecutorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockTaskData);
+			TasksRepositoryMock.assignTaskUser.mockResolvedValue(undefined);
+
+			await tasksService.assignTaskUser(assignData);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(2);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.assignTaskUser).toHaveBeenCalledWith({
+				taskId: taskId,
+				executorUserId: executorUserId,
+			});
+		});
+
+		it('should throw error when user does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockRejectedValueOnce(
+				new HttpError(
+					HttpErrorCode.NOT_FOUND,
+					USERS_MESSAGES.USER_NOT_FOUND_CREATER,
+					TASKS_PATHS.ASSIGN_TASK_USER,
+				),
+			);
+
+			await expect(tasksService.assignTaskUser(assignTaskUserData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
+			expect(TasksRepositoryMock.findById).not.toHaveBeenCalled();
+			expect(TasksRepositoryMock.assignTaskUser).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when executor user does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockUser);
+			UserServiceMock.getUserOrThrow.mockRejectedValueOnce(
+				new HttpError(
+					HttpErrorCode.NOT_FOUND,
+					USERS_MESSAGES.USER_NOT_FOUND_EXECUTOR,
+					TASKS_PATHS.ASSIGN_TASK_USER,
+				),
+			);
+
+			await expect(tasksService.assignTaskUser(assignTaskUserData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(2);
+			expect(TasksRepositoryMock.findById).not.toHaveBeenCalled();
+			expect(TasksRepositoryMock.assignTaskUser).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when task does not exist', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockUser);
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockExecutorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(null);
+
+			await expect(tasksService.assignTaskUser(assignTaskUserData)).rejects.toThrow(HttpError);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(2);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.assignTaskUser).not.toHaveBeenCalled();
+		});
+
+		it('should throw FORBIDDEN error when user is not creator but tries to assign themselves', async () => {
+			const nonCreatorUserId = 99;
+			const assignDataWithSelfAssign = {
+				userId: nonCreatorUserId,
+				info: {
+					taskId: taskId,
+					executorUserId: nonCreatorUserId,
+				},
+			};
+
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce({ ...mockUser, id: nonCreatorUserId });
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce({
+				...mockExecutorUser,
+				id: nonCreatorUserId,
+			});
+			TasksRepositoryMock.findById.mockResolvedValue(mockTaskData);
+
+			await expect(tasksService.assignTaskUser(assignDataWithSelfAssign)).rejects.toThrow(
+				new HttpError(
+					HttpErrorCode.FORBIDDEN,
+					TASKS_MESSAGES.BAN_ON_ASSIGN_TASK_USER,
+					TASKS_PATHS.ASSIGN_TASK_USER,
+				),
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(2);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.assignTaskUser).not.toHaveBeenCalled();
+		});
+
+		it('should throw error when repository assignTaskUser fails', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockUser);
+			UserServiceMock.getUserOrThrow.mockResolvedValueOnce(mockExecutorUser);
+			TasksRepositoryMock.findById.mockResolvedValue(mockTaskData);
+			TasksRepositoryMock.assignTaskUser.mockRejectedValue(new Error('Database error'));
+
+			await expect(tasksService.assignTaskUser(assignTaskUserData)).rejects.toThrow(
+				'Database error',
+			);
+
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(2);
+			expect(TasksRepositoryMock.findById).toHaveBeenCalledWith(taskId);
+			expect(TasksRepositoryMock.assignTaskUser).toHaveBeenCalled();
 		});
 	});
 });

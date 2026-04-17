@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ITasksRepository } from './tasks.reposotory.interface';
-import { ICreateTaskData, IUpdateTaskData } from './types';
+import { ICreateTaskData, IUpdateAssignUserRepository, IUpdateTaskData } from './types';
 import { TYPES } from '../common/types/types';
 import { PrismaService } from '../common/database/prisma.service';
 import { TaskModel } from '@prisma/client';
@@ -66,5 +66,18 @@ export class TasksRepository implements ITasksRepository {
 		await this.prismaService.client.taskModel.delete({
 			where: { id: taskId },
 		});
+	}
+
+	async assignTaskUser(data: IUpdateAssignUserRepository): Promise<void> {
+		try {
+			await this.prismaService.client.taskModel.update({
+				where: { id: data.taskId },
+				data: {
+					executorUserId: data.executorUserId,
+				},
+			});
+		} catch (error) {
+			throw error;
+		}
 	}
 }
