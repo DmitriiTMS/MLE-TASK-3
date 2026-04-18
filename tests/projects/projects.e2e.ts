@@ -4,7 +4,7 @@ import { boot } from '../../src/main';
 import { PrismaService } from '../../src/common/database/prisma.service';
 import { ILogger } from '../../src/common/logger/logger.interface';
 import request from 'supertest';
-import { BASE_PROJECTS_PATH, PROJECTS_PATH } from '../../src/projects/constants';
+import { BASE_PROJECTS_PATH, PROJECTS_MESSAGES, PROJECTS_PATH } from '../../src/projects/constants';
 import { AUTH_PATHS, BASE_AUTH_PATH } from '../../src/auth/constants';
 
 // npm run test:e2e -- tests/projects/projects.e2e.ts
@@ -580,7 +580,7 @@ describe('ProjectsController', () => {
                 .expect(404);
 
             expect(response.body).toHaveProperty('message');
-            expect(response.body.message).toBe('Ресурс не найден');
+            expect(response.body.message).toBe(PROJECTS_MESSAGES.PROJECT_NOT_FOUND);
         });
 
         it('should return 403 when user tries to update someone else\'s project', async () => {
@@ -843,7 +843,7 @@ describe('ProjectsController', () => {
                 .expect(404);
 
             expect(response.body).toHaveProperty('message');
-            expect(response.body.message).toBe('Ресурс не найден');
+            expect(response.body.message).toBe(PROJECTS_MESSAGES.PROJECT_NOT_FOUND);
         });
 
         it('should return 403 when user tries to delete someone else\'s project', async () => {
@@ -856,7 +856,6 @@ describe('ProjectsController', () => {
                 });
 
             const secondUserToken = secondUserRegister.body.accessToken;
-            const secondUserId = secondUserRegister.body.id;
 
             const secondProjectResponse = await request(application.app)
                 .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)

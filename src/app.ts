@@ -14,6 +14,10 @@ import { PrismaService } from './common/database/prisma.service';
 import cookieParser from 'cookie-parser';
 import { ProjectsController } from './projects/projects.controller';
 import { BASE_PROJECTS_PATH } from './projects/constants';
+import { TasksController } from './tasks/tasks.controller';
+import { BASE_TASKS_PATH } from './tasks/constants';
+import { TimeLogsController } from './time-logs/time-logs.controller';
+import { BASE_TIME_LOGS_PATH } from './time-logs/constants';
 
 @injectable()
 export class App {
@@ -27,6 +31,8 @@ export class App {
 		@inject(TYPES.IExeptionFilter) private readonly exeptionFilter: IExeptionFilter,
 		@inject(TYPES.IAuthController) private readonly authController: AuthController,
 		@inject(TYPES.IProjectsController) private readonly projectsController: ProjectsController,
+		@inject(TYPES.ITasksController) private readonly tasksController: TasksController,
+		@inject(TYPES.ITimeLogsController) private readonly timeLogsController: TimeLogsController,
 	) {
 		this.app = express();
 		this.configureMiddleware();
@@ -48,6 +54,8 @@ export class App {
 	private useRoutes(): void {
 		this.app.use(BASE_AUTH_PATH, this.authController.router);
 		this.app.use(BASE_PROJECTS_PATH, this.projectsController.router);
+		this.app.use(BASE_TASKS_PATH, this.tasksController.router);
+		this.app.use(BASE_TIME_LOGS_PATH, this.timeLogsController.router);
 	}
 
 	private useExeptionFilters(): void {

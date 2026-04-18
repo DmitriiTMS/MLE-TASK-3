@@ -17,4 +17,12 @@ export const TYPES = {
 	IProjectsController: Symbol.for('IProjectsController'),
 	IProjectsService: Symbol.for('IProjectsService'),
 	IProjectsRepository: Symbol.for('IProjectsRepository'),
+
+	ITasksController: Symbol.for('ITasksController'),
+	ITasksService: Symbol.for('ITasksService'),
+	ITasksRepository: Symbol.for('ITasksRepository'),
+
+	ITimeLogsController: Symbol.for('ITimeLogsController'),
+	ITimeLogsService: Symbol.for('ITimeLogsService'),
+	ITimeLogsRepository: Symbol.for('ITimeLogsRepository'),
 };

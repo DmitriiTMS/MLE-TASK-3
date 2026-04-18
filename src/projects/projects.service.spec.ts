@@ -9,10 +9,11 @@ import { IProjectsService } from './projects.service.interface';
 import { ProjectEntity } from './entity/project.entity';
 import { ProjectsService } from './projects.service';
 import { IUserService } from '../users/user.service.interface';
-import { PROJECTS_PATH } from './constants';
+import { PROJECTS_MESSAGES, PROJECTS_PATH } from './constants';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { HttpError } from '../common/error/http-error';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { USERS_MESSAGES } from '../users/constants';
 
 // npm run test -- src/projects/projects.service.spec.ts
 
@@ -77,7 +78,11 @@ describe('ProjectsService', () => {
 
 			const result = await projectsService.create(createProjectDto, userId);
 
-			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(userId, PROJECTS_PATH.CREATE);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				PROJECTS_PATH.CREATE,
+			);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(ProjectsRepositoryMock.create).toHaveBeenCalledWith({
 				name: createProjectDto.name,
@@ -99,7 +104,11 @@ describe('ProjectsService', () => {
 			);
 
 			await expect(projectsService.create(createProjectDto, userId)).rejects.toThrow();
-			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(userId, PROJECTS_PATH.CREATE);
+			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
+				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
+				PROJECTS_PATH.CREATE,
+			);
 			expect(ProjectsRepositoryMock.create).not.toHaveBeenCalled();
 		});
 
@@ -171,6 +180,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID,
 			);
 			expect(ProjectsRepositoryMock.getAllProjectsByUserId).toHaveBeenCalledWith(userId);
@@ -208,6 +218,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID,
 			);
 			expect(ProjectsRepositoryMock.getAllProjectsByUserId).not.toHaveBeenCalled();
@@ -243,6 +254,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
 			);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
@@ -271,6 +283,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
 			);
 			expect(ProjectsRepositoryMock.findById).not.toHaveBeenCalled();
@@ -281,7 +294,7 @@ describe('ProjectsService', () => {
 			ProjectsRepositoryMock.findById.mockResolvedValue(null);
 
 			await expect(projectsService.getProjectByUserId(projectId, userId)).rejects.toThrow(
-				'Ресурс не найден',
+				PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
 			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalled();
@@ -371,6 +384,7 @@ describe('ProjectsService', () => {
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
 			);
 		});
@@ -421,6 +435,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.UPDATE_PROJECT,
 			);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
@@ -493,6 +508,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.UPDATE_PROJECT,
 			);
 			expect(ProjectsRepositoryMock.findById).not.toHaveBeenCalled();
@@ -504,11 +520,12 @@ describe('ProjectsService', () => {
 			ProjectsRepositoryMock.findById.mockResolvedValue(null);
 
 			await expect(projectsService.update(userId, projectId, updateDto)).rejects.toThrow(
-				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+				PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
 			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.UPDATE_PROJECT,
 			);
 			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
@@ -531,6 +548,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.UPDATE_PROJECT,
 			);
 			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
@@ -595,6 +613,7 @@ describe('ProjectsService', () => {
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.UPDATE_PROJECT,
 			);
 		});
@@ -745,6 +764,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.REMOVE_PROJECT,
 			);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
@@ -768,6 +788,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.REMOVE_PROJECT,
 			);
 			expect(ProjectsRepositoryMock.findById).not.toHaveBeenCalled();
@@ -779,11 +800,12 @@ describe('ProjectsService', () => {
 			ProjectsRepositoryMock.findById.mockResolvedValue(null);
 
 			await expect(projectsService.remove(projectId, userId)).rejects.toThrow(
-				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+				PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
 			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.REMOVE_PROJECT,
 			);
 			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
@@ -806,6 +828,7 @@ describe('ProjectsService', () => {
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.REMOVE_PROJECT,
 			);
 			expect(ProjectsRepositoryMock.findById).toHaveBeenCalledWith(projectId);
@@ -882,6 +905,7 @@ describe('ProjectsService', () => {
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(1);
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledWith(
 				userId,
+				USERS_MESSAGES.USER_NOT_FOUND,
 				PROJECTS_PATH.REMOVE_PROJECT,
 			);
 		});
@@ -913,7 +937,7 @@ describe('ProjectsService', () => {
 			ProjectsRepositoryMock.findById.mockResolvedValue(null);
 
 			await expect(projectsService.remove(projectId, userId)).rejects.toThrow(
-				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
+				PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
 			);
 
 			expect(ProjectsRepositoryMock.remove).not.toHaveBeenCalled();

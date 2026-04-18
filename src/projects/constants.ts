@@ -8,4 +8,9 @@ export const PROJECTS_PATH = {
 	GET_PROJECT_BY_USER_ID: '/:projectId',
 	UPDATE_PROJECT: '/:projectId',
 	REMOVE_PROJECT: '/:projectId',
+	CREATE_TASKS_FOR_PROJECT: '/:projectId/tasks',
+} as const;
+
+export const PROJECTS_MESSAGES = {
+	PROJECT_NOT_FOUND: 'Проект не найден',
 } as const;

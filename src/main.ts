@@ -13,6 +13,8 @@ import { ConfigService } from './common/config/config.service';
 import { PrismaService } from './common/database/prisma.service';
 import { JwtService } from './auth/jwt/jwt.service';
 import { projectsModule } from './projects/projects.module';
+import { tasksModule } from './tasks/tasks.module';
+import { timeLogsModule } from './time-logs/time-logs.module';
 
 interface IBootstrap {
 	app: App;
@@ -30,7 +32,7 @@ export const appModule = new ContainerModule((bind: interfaces.Bind) => {
 
 async function bootstrap(): Promise<IBootstrap> {
 	const appContainer = new Container();
-	appContainer.load(appModule, authModule, userModule, projectsModule);
+	appContainer.load(appModule, authModule, userModule, projectsModule, tasksModule, timeLogsModule);
 	const app = appContainer.get<App>(TYPES.Application);
 	await app.init();
 	return { app, appContainer };

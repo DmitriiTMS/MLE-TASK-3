@@ -7,10 +7,11 @@ import { ProjectsRepository } from './projects.repository';
 import { TYPES } from '../common/types/types';
 import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
-import { PROJECTS_PATH } from './constants';
+import { PROJECTS_MESSAGES, PROJECTS_PATH } from './constants';
 import { IUserService } from '../users/user.service.interface';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectModel } from '@prisma/client';
+import { USERS_MESSAGES } from '../users/constants';
 
 @injectable()
 export class ProjectsService implements IProjectsService {
@@ -20,14 +21,26 @@ export class ProjectsService implements IProjectsService {
 	) {}
 
 	async getAllProjectsByUserId(userId: number): Promise<ProjectEntity[]> {
-		await this.userService.getUserOrThrow(userId, PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID);
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID,
+		);
 		const result = await this.projectsRepository.getAllProjectsByUserId(userId);
 		return result.map((project) => ProjectEntity.fromDatabase(project));
 	}
 
 	async getProjectByUserId(projectId: number, userId: number): Promise<ProjectEntity> {
-		await this.userService.getUserOrThrow(userId, PROJECTS_PATH.GET_PROJECT_BY_USER_ID);
-		const projectData = await this.getProjectOrThrow(projectId, PROJECTS_PATH.REMOVE_PROJECT);
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			PROJECTS_PATH.GET_PROJECT_BY_USER_ID,
+		);
+		const projectData = await this.getProjectOrThrow(
+			projectId,
+			PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
+			PROJECTS_PATH.REMOVE_PROJECT,
+		);
 		const project = ProjectEntity.fromDatabase(projectData);
 
 		if (!project.isOwnedBy(userId)) {
@@ -42,7 +55,11 @@ export class ProjectsService implements IProjectsService {
 	}
 
 	async create({ name, description }: CreateProjectsDto, userId: number): Promise<ProjectEntity> {
-		await this.userService.getUserOrThrow(userId, PROJECTS_PATH.CREATE);
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			PROJECTS_PATH.CREATE,
+		);
 		try {
 			const createdProject = new ProjectEntity(name, userId, description);
 			const project = await this.projectsRepository.create({
@@ -65,8 +82,16 @@ export class ProjectsService implements IProjectsService {
 		projectId: number,
 		{ name, description }: UpdateProjectDto,
 	): Promise<void> {
-		await this.userService.getUserOrThrow(userId, PROJECTS_PATH.UPDATE_PROJECT);
-		const projectData = await this.getProjectOrThrow(projectId, PROJECTS_PATH.UPDATE_PROJECT);
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			PROJECTS_PATH.UPDATE_PROJECT,
+		);
+		const projectData = await this.getProjectOrThrow(
+			projectId,
+			PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
+			PROJECTS_PATH.UPDATE_PROJECT,
+		);
 
 		const project = ProjectEntity.fromDatabase(projectData);
 		if (!project.isOwnedBy(userId)) {
@@ -92,8 +117,16 @@ export class ProjectsService implements IProjectsService {
 	}
 
 	async remove(projectId: number, userId: number): Promise<void> {
-		await this.userService.getUserOrThrow(userId, PROJECTS_PATH.REMOVE_PROJECT);
-		const projectData = await this.getProjectOrThrow(projectId, PROJECTS_PATH.REMOVE_PROJECT);
+		await this.userService.getUserOrThrow(
+			userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			PROJECTS_PATH.REMOVE_PROJECT,
+		);
+		const projectData = await this.getProjectOrThrow(
+			projectId,
+			PROJECTS_MESSAGES.PROJECT_NOT_FOUND,
+			PROJECTS_PATH.REMOVE_PROJECT,
+		);
 		const project = ProjectEntity.fromDatabase(projectData);
 
 		if (!project.isOwnedBy(userId)) {
@@ -107,14 +140,14 @@ export class ProjectsService implements IProjectsService {
 		await this.projectsRepository.remove(projectId);
 	}
 
-	async getProjectOrThrow(projectId: number, errorPath?: string): Promise<ProjectModel> {
+	async getProjectOrThrow(
+		projectId: number,
+		message: string,
+		errorPath?: string,
+	): Promise<ProjectModel> {
 		const project = await this.projectsRepository.findById(projectId);
 		if (!project) {
-			throw new HttpError(
-				HttpErrorCode.NOT_FOUND,
-				HttpErrorMessages[HttpErrorCode.NOT_FOUND],
-				errorPath,
-			);
+			throw new HttpError(HttpErrorCode.NOT_FOUND, message, errorPath);
 		}
 		return project;
 	}
