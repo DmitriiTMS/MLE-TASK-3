@@ -61,3 +61,14 @@ export interface IUpdateAssignUserService {
 	userId: number;
 	info: IUpdateAssignUserRepository;
 }
+
+export interface IUpdateStatusRepository {
+	taskId: number;
+	status: TaskStatus,
+	completedAt?: Date | null
+}
+
+export interface IUpdateStatusService {
+	userId: number;
+	dataInfo: IUpdateStatusRepository
+}

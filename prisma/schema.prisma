@@ -17,8 +17,9 @@ model UserModel {
 
   projects ProjectModel[]
 
-  createdTasks  TaskModel[] @relation("TaskCreator")
-  executorTasks TaskModel[] @relation("TaskExecutor")
+  createdTasks  TaskModel[]    @relation("TaskCreator")
+  executorTasks TaskModel[]    @relation("TaskExecutor")
+  timeLogs      TimeLogModel[]
 
   @@map("users")
 }
@@ -58,7 +59,27 @@ model TaskModel {
   executorUserId Int?       @map("executor_user_id")
   executor       UserModel? @relation("TaskExecutor", fields: [executorUserId], references: [id])
 
+  timeLogs TimeLogModel[]
+
   @@map("tasks")
+}
+
+model TimeLogModel {
+  id         Int       @id @default(autoincrement())
+  startedAt  DateTime  @default(now()) @map("started_at") // время начала работы над задачей (например, при статусе "IN_PROGRESS")
+  endedAt    DateTime? @map("ended_at") // время окончания работы (при статусе "COMPLETED" или при смене статуса с "IN_PROGRESS")
+  durationMs Int?      @map("duration_ms") // длительность в миллисекундах (вычисляемое поле или заполняется при закрытии)
+
+  taskId Int       @map("task_id")
+  task   TaskModel @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId Int       @map("user_id")
+  user   UserModel @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("time_logs")
 }
 
 enum TaskStatus {

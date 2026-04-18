@@ -130,21 +130,6 @@ export class TaskEntity {
 		return this._status === TaskStatus.CREATED;
 	}
 
-	complete(): void {
-		if (this._status !== TaskStatus.COMPLETED) {
-			this._status = TaskStatus.COMPLETED;
-			this._completedAt = new Date();
-			this._updatedAt = new Date();
-		}
-	}
-
-	startProgress(): void {
-		if (this._status === TaskStatus.CREATED) {
-			this._status = TaskStatus.IN_PROGRESS;
-			this._updatedAt = new Date();
-		}
-	}
-
 	updateFields(updates: {
 		title?: string;
 		description?: string | null;

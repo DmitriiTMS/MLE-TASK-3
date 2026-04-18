@@ -15,6 +15,7 @@ import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TasksService } from './tasks.service';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ExecutorIdUserDto } from './dto/executor-id.dto';
+import { StatusTaskDto } from './dto/status-task.dto';
 
 @injectable()
 export class TasksController extends BaseController implements ITasksController {
@@ -45,7 +46,6 @@ export class TasksController extends BaseController implements ITasksController 
 					new ValidateMiddleware(logger, UpdateTaskDto, 'body'),
 				],
 			},
-
 			{
 				path: TASKS_PATHS.DELETE_TASK,
 				method: 'delete',
@@ -55,7 +55,6 @@ export class TasksController extends BaseController implements ITasksController 
 					new ValidateMiddleware(logger, TaskIdDto, 'params'),
 				],
 			},
-
 			{
 				path: TASKS_PATHS.ASSIGN_TASK_USER,
 				method: 'patch',
@@ -64,6 +63,16 @@ export class TasksController extends BaseController implements ITasksController 
 					new AuthMiddleware(this.jwtService, logger),
 					new ValidateMiddleware(logger, TaskIdDto, 'params'),
 					new ValidateMiddleware(logger, ExecutorIdUserDto, 'body'),
+				],
+			},
+			{
+				path: TASKS_PATHS.STATUS_TASK_USER,
+				method: 'patch',
+				func: this.installStatusTask,
+				middlewares: [
+					new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, TaskIdDto, 'params'),
+					new ValidateMiddleware(logger, StatusTaskDto, 'body'),
 				],
 			},
 		]);
@@ -153,6 +162,33 @@ export class TasksController extends BaseController implements ITasksController 
 				taskId,
 				executorUserId: req.body.executorUserId,
 			},
+		});
+
+		this.noContent(res, {});
+	}
+
+	async installStatusTask(
+		req: Request<{ taskId: string }, object, StatusTaskDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		const taskId = parseInt(req.params.taskId);
+		if (!req.user?.userId) {
+			return next(
+				new HttpError(
+					HttpErrorCode.UNAUTHORIZED,
+					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
+					TASKS_PATHS.STATUS_TASK_USER,
+				),
+			);
+		}
+		const { userId } = req.user;
+		await this.tasksService.installStatusTask({
+			userId,
+			dataInfo: {
+				taskId,
+				status: req.body.status,
+			}
 		});
 
 		this.noContent(res, {});

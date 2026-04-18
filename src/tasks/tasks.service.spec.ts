@@ -38,6 +38,7 @@ const TasksRepositoryMock = {
 	update: jest.fn(),
 	remove: jest.fn(),
 	assignTaskUser: jest.fn(),
+	installStatusTask: jest.fn()
 } as jest.Mocked<ITasksRepository>;
 
 describe('TasksService', () => {
@@ -977,7 +978,7 @@ describe('TasksService', () => {
 			TasksRepositoryMock.assignTaskUser.mockRejectedValue(new Error('Database error'));
 
 			await expect(tasksService.assignTaskUser(assignTaskUserData)).rejects.toThrow(
-				'Database error',
+				'Внутренняя ошибка сервера',
 			);
 
 			expect(UserServiceMock.getUserOrThrow).toHaveBeenCalledTimes(2);

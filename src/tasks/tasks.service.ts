@@ -3,13 +3,13 @@ import { inject, injectable } from 'inversify';
 import { ITasksService } from './tasks.service.interface';
 import { TYPES } from '../common/types/types';
 import { ITasksRepository } from './tasks.reposotory.interface';
-import { ICreateTaskData, IUpdateAssignUserService } from './types';
+import { ICreateTaskData, IUpdateAssignUserService, IUpdateStatusService } from './types';
 import { TaskEntity } from './entity/task.entity';
 import { IUserService } from '../users/user.service.interface';
 import { PROJECTS_MESSAGES, PROJECTS_PATH } from '../projects/constants';
 import { IProjectsService } from '../projects/projects.service.interface';
 import { USERS_MESSAGES } from '../users/constants';
-import { TaskModel } from '@prisma/client';
+import { TaskModel, TaskStatus } from '@prisma/client';
 import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TASKS_MESSAGES, TASKS_PATHS } from './constants';
@@ -21,7 +21,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
-	) {}
+	) { }
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
@@ -128,7 +128,7 @@ export class TasksService implements ITasksService {
 			throw new HttpError(
 				HttpErrorCode.INTERNAL_SERVER_ERROR,
 				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
-				PROJECTS_PATH.UPDATE_PROJECT,
+				TASKS_PATHS.UPDATE_TASK,
 			);
 		}
 	}
@@ -183,7 +183,54 @@ export class TasksService implements ITasksService {
 				TASKS_PATHS.ASSIGN_TASK_USER,
 			);
 		}
-		await this.tasksRepository.assignTaskUser(data.info);
+		try {
+			await this.tasksRepository.assignTaskUser(data.info);
+		} catch (error) {
+			throw new HttpError(
+				HttpErrorCode.INTERNAL_SERVER_ERROR,
+				HttpErrorMessages[HttpErrorCode.INTERNAL_SERVER_ERROR],
+				TASKS_PATHS.ASSIGN_TASK_USER,
+			);
+		}
+
+	}
+
+	async installStatusTask(data: IUpdateStatusService): Promise<void> {
+		await this.userService.getUserOrThrow(
+			data.userId,
+			USERS_MESSAGES.USER_NOT_FOUND,
+			TASKS_PATHS.STATUS_TASK_USER,
+		);
+
+		const taskData = await this.getTaskOrThrow(
+			data.dataInfo.taskId,
+			TASKS_MESSAGES.TASK_NOT_FOUND,
+			TASKS_PATHS.STATUS_TASK_USER,
+		);
+
+		const task = TaskEntity.fromDatabase(taskData);
+
+		if (!task.isExecutorUser(data.userId)) {
+			throw new HttpError(
+				HttpErrorCode.FORBIDDEN,
+				TASKS_MESSAGES.TASK_BAN_ON_STATUS,
+				TASKS_PATHS.STATUS_TASK_USER,
+			);
+		}
+
+		if (data.dataInfo.status === TaskStatus.COMPLETED) {
+			await this.tasksRepository.installStatusTask({
+				taskId: data.dataInfo.taskId,
+				status: data.dataInfo.status,
+				completedAt: new Date()
+			})
+		} else {
+			await this.tasksRepository.installStatusTask({
+				taskId: data.dataInfo.taskId,
+				status: data.dataInfo.status,
+				completedAt: null
+			})
+		}
 	}
 
 	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {
