@@ -14,6 +14,7 @@ import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TASKS_MESSAGES, TASKS_PATHS } from './constants';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { ITimeLogsService } from '../time-logs/time-logs.service.interface';
 
 @injectable()
 export class TasksService implements ITasksService {
@@ -21,6 +22,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IUserService) private readonly userService: IUserService,
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
+		@inject(TYPES.ITimeLogsService) private readonly timeLogsService: ITimeLogsService,
 	) { }
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
@@ -231,6 +233,14 @@ export class TasksService implements ITasksService {
 				completedAt: null
 			})
 		}
+
+		if (data.dataInfo.status === TaskStatus.IN_PROGRESS) {
+			await this.timeLogsService.startWorkOnTask(task, data.userId)
+		}
+		if (data.dataInfo.status === TaskStatus.COMPLETED) {
+			await this.timeLogsService.completeTask(task, data.userId)
+		}
+
 	}
 
 	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {

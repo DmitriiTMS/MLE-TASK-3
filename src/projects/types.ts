@@ -1,3 +1,5 @@
+import { TaskStatus } from "@prisma/client";
+
 export interface IProjectRequestModel {
 	name: string;
 	description?: string | null;
@@ -26,3 +28,33 @@ export interface IProjectResponse {
 	createdAt?: Date;
 	updatedAt?: Date;
 }
+
+export interface IResponseProjectsRepository {
+	id: number
+	name: string
+	description: string | null
+	createdAt: Date
+	updatedAt: Date
+	userId: number
+	tasks: {
+		status: TaskStatus
+		executor: {
+			name: string
+		} | null
+	}[]
+}
+
+export interface IResponseProjectsController {
+	id: number
+	name: string
+	description: string | null
+	createdAt: Date
+	updatedAt: Date
+	userId: number
+	tasks: {
+		status: TaskStatus
+		name: string
+	}[]
+}
+
+

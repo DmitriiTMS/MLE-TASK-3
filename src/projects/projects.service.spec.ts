@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import 'reflect-metadata';
-import { ProjectModel } from '@prisma/client';
+import { ProjectModel, TaskStatus } from '@prisma/client';
 import { Container } from 'inversify';
 import { TYPES } from '../common/types/types';
 import { IProjectsRepository } from './projects.repository.interface';
@@ -14,6 +14,7 @@ import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { HttpError } from '../common/error/http-error';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { USERS_MESSAGES } from '../users/constants';
+import { IResponseProjectsRepository } from './types';
 
 // npm run test -- src/projects/projects.service.spec.ts
 
@@ -153,7 +154,7 @@ describe('ProjectsService', () => {
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		};
-		const mockProjects = [
+		const mockProjectsWithTasks: IResponseProjectsRepository[] = [
 			{
 				id: 1,
 				name: 'Project 1',
@@ -161,6 +162,20 @@ describe('ProjectsService', () => {
 				description: 'Desc 1',
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				tasks: [
+					{
+						status: TaskStatus.COMPLETED,
+						executor: {
+							name: 'Executor 1',
+						},
+					},
+					{
+						status: TaskStatus.IN_PROGRESS,
+						executor: {
+							name: 'Executor 2',
+						},
+					},
+				],
 			},
 			{
 				id: 2,
@@ -169,12 +184,30 @@ describe('ProjectsService', () => {
 				description: 'Desc 2',
 				createdAt: new Date(),
 				updatedAt: new Date(),
+				tasks: [
+					{
+						status: TaskStatus.CREATED,
+						executor: null,
+					},
+				],
 			},
 		];
 
-		it('should return projects when user exists and has projects', async () => {
+		const mockProjectsWithoutTasks: IResponseProjectsRepository[] = [
+			{
+				id: 1,
+				name: 'Project 1',
+				userId,
+				description: 'Desc 1',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				tasks: [],
+			},
+		];
+
+		it('should return projects with tasks when user exists and has projects', async () => {
 			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
-			ProjectsRepositoryMock.getAllProjectsByUserId.mockResolvedValue(mockProjects);
+			ProjectsRepositoryMock.getAllProjectsByUserId.mockResolvedValue(mockProjectsWithTasks);
 
 			const result = await projectsService.getAllProjectsByUserId(userId);
 
@@ -185,10 +218,26 @@ describe('ProjectsService', () => {
 			);
 			expect(ProjectsRepositoryMock.getAllProjectsByUserId).toHaveBeenCalledWith(userId);
 			expect(result).toHaveLength(2);
-			expect(result[0]).toBeInstanceOf(ProjectEntity);
-			expect(result[0].id).toBe(1);
-			expect(result[0].name).toBe('Project 1');
-			expect(result[1].id).toBe(2);
+			expect(result).toEqual(mockProjectsWithTasks);
+			expect(result[0].tasks).toHaveLength(2);
+			expect(result[0].tasks[0].status).toBe(TaskStatus.COMPLETED);
+			expect(result[0].tasks[0].executor?.name).toBe('Executor 1');
+			expect(result[0].tasks[1].status).toBe(TaskStatus.IN_PROGRESS);
+			expect(result[0].tasks[1].executor?.name).toBe('Executor 2');
+			expect(result[1].tasks).toHaveLength(1);
+			expect(result[1].tasks[0].status).toBe(TaskStatus.CREATED);
+			expect(result[1].tasks[0].executor).toBeNull();
+		});
+
+		it('should return projects without tasks when user has projects without tasks', async () => {
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.getAllProjectsByUserId.mockResolvedValue(mockProjectsWithoutTasks);
+
+			const result = await projectsService.getAllProjectsByUserId(userId);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].tasks).toEqual([]);
+			expect(result).toEqual(mockProjectsWithoutTasks);
 		});
 
 		it('should return empty array when user exists but has no projects', async () => {
@@ -223,8 +272,76 @@ describe('ProjectsService', () => {
 			);
 			expect(ProjectsRepositoryMock.getAllProjectsByUserId).not.toHaveBeenCalled();
 		});
-	});
 
+		it('should correctly map tasks with null executor', async () => {
+			const projectsWithNullExecutor = [
+				{
+					id: 3,
+					name: 'Project 3',
+					userId,
+					description: 'Desc 3',
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					tasks: [
+						{
+							status: TaskStatus.CREATED,
+							executor: null,
+						},
+						{
+							status: TaskStatus.COMPLETED,
+							executor: null,
+						},
+					],
+				},
+			];
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.getAllProjectsByUserId.mockResolvedValue(projectsWithNullExecutor);
+
+			const result = await projectsService.getAllProjectsByUserId(userId);
+
+			expect(result[0].tasks).toHaveLength(2);
+			expect(result[0].tasks[0].executor).toBeNull();
+			expect(result[0].tasks[1].executor).toBeNull();
+		});
+
+		it('should handle project with mixed tasks (some with executor, some without)', async () => {
+			const projectsWithMixedTasks = [
+				{
+					id: 4,
+					name: 'Project 4',
+					userId,
+					description: 'Desc 4',
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					tasks: [
+						{
+							status: TaskStatus.COMPLETED,
+							executor: { name: 'Executor A' },
+						},
+						{
+							status: TaskStatus.CREATED,
+							executor: null,
+						},
+						{
+							status: TaskStatus.IN_PROGRESS,
+							executor: { name: 'Executor B' },
+						},
+					],
+				},
+			];
+
+			UserServiceMock.getUserOrThrow.mockResolvedValue(mockUser);
+			ProjectsRepositoryMock.getAllProjectsByUserId.mockResolvedValue(projectsWithMixedTasks);
+
+			const result = await projectsService.getAllProjectsByUserId(userId);
+
+			expect(result[0].tasks).toHaveLength(3);
+			expect(result[0].tasks[0].executor?.name).toBe('Executor A');
+			expect(result[0].tasks[1].executor).toBeNull();
+			expect(result[0].tasks[2].executor?.name).toBe('Executor B');
+		});
+	});
 	describe('getProjectById', () => {
 		const userId = 1;
 		const projectId = 10;

@@ -15,6 +15,7 @@ import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { TaskEntity } from './entity/task.entity';
 import { TASKS_MESSAGES, TASKS_PATHS } from './constants';
 import { HttpError } from '../common/error/http-error';
+import { ITimeLogsService } from '../time-logs/time-logs.service.interface';
 
 // npm run test -- src/tasks/tasks.service.spec.ts
 
@@ -41,6 +42,11 @@ const TasksRepositoryMock = {
 	installStatusTask: jest.fn()
 } as jest.Mocked<ITasksRepository>;
 
+const TimeLogsServiceMock = {
+	startWorkOnTask: jest.fn(),
+	completeTask: jest.fn(),
+} as jest.Mocked<ITimeLogsService>;
+
 describe('TasksService', () => {
 	let tasksService: ITasksService;
 
@@ -49,6 +55,7 @@ describe('TasksService', () => {
 		container.bind<ITasksService>(TYPES.ITasksService).to(TasksService);
 		container.bind<IUserService>(TYPES.IUserService).toConstantValue(UserServiceMock);
 		container.bind<IProjectsService>(TYPES.IProjectsService).toConstantValue(ProjectsServiceMock);
+		container.bind<ITimeLogsService>(TYPES.ITimeLogsService).toConstantValue(TimeLogsServiceMock);
 		container.bind<ITasksRepository>(TYPES.ITasksRepository).toConstantValue(TasksRepositoryMock);
 
 		tasksService = container.get<ITasksService>(TYPES.ITasksService);

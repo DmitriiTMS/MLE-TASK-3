@@ -13,11 +13,11 @@ import { AuthMiddleware } from '../auth/middleware/auth.middleware';
 import { ProjectsService } from './projects.service';
 import { HttpError } from '../common/error/http-error';
 import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
-import { ProjectEntity } from './entity/project.entity';
 import { ProjectIdDto } from './dto/projectId.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { CreateTaskDto } from '../tasks/dto/create-task.dto';
 import { TasksService } from '../tasks/tasks.service';
+import { IResponseProjectsController, IResponseProjectsRepository } from './types';
 
 @injectable()
 export class ProjectsController extends BaseController implements IProjectsController {
@@ -98,8 +98,8 @@ export class ProjectsController extends BaseController implements IProjectsContr
 			);
 		}
 		const { userId } = req.user;
-		const projects: ProjectEntity[] = await this.projectsService.getAllProjectsByUserId(userId);
-		const response = projects.map((project) => project.toResponse());
+		const projects: IResponseProjectsRepository[] = await this.projectsService.getAllProjectsByUserId(userId);
+		const response = this.toResponseListProjectsWithEmptyName(projects)
 		this.ok(res, response);
 	}
 
@@ -215,5 +215,20 @@ export class ProjectsController extends BaseController implements IProjectsContr
 
 		const task = await this.tasksService.createTask(data);
 		this.created(res, { taskId: task.id });
+	}
+
+	toResponseListProjectsWithEmptyName(data: IResponseProjectsRepository[]): IResponseProjectsController[] {
+		return data.map(project => ({
+			id: project.id,
+			name: project.name,
+			description: project.description,
+			createdAt: project.createdAt,
+			updatedAt: project.updatedAt,
+			userId: project.userId,
+			tasks: project.tasks.map(task => ({
+				status: task.status,
+				name: task.executor?.name ?? ''
+			}))
+		}))
 	}
 }

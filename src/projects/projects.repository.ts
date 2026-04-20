@@ -4,17 +4,29 @@ import { IProjectsRepository } from './projects.repository.interface';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../common/types/types';
 import { PrismaService } from '../common/database/prisma.service';
-import { IProjectRequestModel, IProjectRequestUpdate } from './types';
+import { IProjectRequestModel, IProjectRequestUpdate, IResponseProjectsRepository } from './types';
 
 @injectable()
 export class ProjectsRepository implements IProjectsRepository {
 	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) {}
 
-	async getAllProjectsByUserId(userId: number): Promise<ProjectModel[]> {
+	async getAllProjectsByUserId(userId: number): Promise<IResponseProjectsRepository[]> {
 		return await this.prismaService.client.projectModel.findMany({
 			where: {
 				userId,
 			},
+			include: {
+				tasks: {
+					select: {
+						status: true,
+						executor: {
+							select: {
+								name: true
+							}
+						}
+					}
+				}
+			}
 		});
 	}
 
