@@ -98,8 +98,9 @@ export class ProjectsController extends BaseController implements IProjectsContr
 			);
 		}
 		const { userId } = req.user;
-		const projects: IResponseProjectsRepository[] = await this.projectsService.getAllProjectsByUserId(userId);
-		const response = this.toResponseListProjectsWithEmptyName(projects)
+		const projects: IResponseProjectsRepository[] =
+			await this.projectsService.getAllProjectsByUserId(userId);
+		const response = this.toResponseListProjectsWithEmptyName(projects);
 		this.ok(res, response);
 	}
 
@@ -217,18 +218,20 @@ export class ProjectsController extends BaseController implements IProjectsContr
 		this.created(res, { taskId: task.id });
 	}
 
-	toResponseListProjectsWithEmptyName(data: IResponseProjectsRepository[]): IResponseProjectsController[] {
-		return data.map(project => ({
+	toResponseListProjectsWithEmptyName(
+		data: IResponseProjectsRepository[],
+	): IResponseProjectsController[] {
+		return data.map((project) => ({
 			id: project.id,
 			name: project.name,
 			description: project.description,
 			createdAt: project.createdAt,
 			updatedAt: project.updatedAt,
 			userId: project.userId,
-			tasks: project.tasks.map(task => ({
+			tasks: project.tasks.map((task) => ({
 				status: task.status,
-				name: task.executor?.name ?? ''
-			}))
-		}))
+				name: task.executor?.name ?? '',
+			})),
+		}));
 	}
 }

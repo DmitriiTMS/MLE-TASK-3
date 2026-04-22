@@ -3,19 +3,22 @@ import { inject, injectable } from 'inversify';
 import { BaseController } from '../common/base/base.controller';
 import { TYPES } from '../common/types/types';
 import { ILogger } from '../common/logger/logger.interface';
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { JwtService } from '../auth/jwt/jwt.service';
-import { HttpError } from '../common/error/http-error';
-import { HttpErrorCode, HttpErrorMessages } from '../common/error/constants';
 import { ITimeLogsController } from './time-logs.controller.interface';
 import { BASE_TIME_LOGS_PATH, TIME_LOGS_PATHS } from './constants';
-import { AuthMiddleware } from '../auth/middleware/auth.middleware';
+// import { AuthMiddleware } from '../auth/middleware/auth.middleware';
 import { ValidateMiddleware } from '../common/middlewares/validate.middleware';
 import { DeveloperIdDto } from './dto/developer-id.dto';
 import { GetDeveloperTimeLogsDto, PeriodType } from './dto/get-developer-time-logs.dto';
-import { IResponseGetDeveloperTime, ITimeLogFilters } from './types';
+import {
+	IResponseGetDeveloperTime,
+	IResponseGetProjectTime,
+	ITimeLogFilters,
+	ITimeLogForProjectFilters,
+} from './types';
 import { ITimeLogsRepository } from './time-logs.repository.interface';
-
+import { ProjectIdDto } from '../projects/dto/projectId.dto';
 
 @injectable()
 export class TimeLogsController extends BaseController implements ITimeLogsController {
@@ -27,14 +30,23 @@ export class TimeLogsController extends BaseController implements ITimeLogsContr
 		super(logger);
 		this.basePath = BASE_TIME_LOGS_PATH;
 		this.bindRoutes([
-
 			{
 				path: TIME_LOGS_PATHS.GET_DEVELOPER_TIME_LOGS,
 				method: 'get',
 				func: this.getDeveloperTimeLogs,
 				middlewares: [
-					new AuthMiddleware(this.jwtService, logger),
+					// new AuthMiddleware(this.jwtService, logger),
 					new ValidateMiddleware(logger, DeveloperIdDto, 'params'),
+					new ValidateMiddleware(logger, GetDeveloperTimeLogsDto, 'query'),
+				],
+			},
+			{
+				path: TIME_LOGS_PATHS.GET_PROJECT_TIME_LOGS,
+				method: 'get',
+				func: this.getProjectTimeLogs,
+				middlewares: [
+					// new AuthMiddleware(this.jwtService, logger),
+					new ValidateMiddleware(logger, ProjectIdDto, 'params'),
 					new ValidateMiddleware(logger, GetDeveloperTimeLogsDto, 'query'),
 				],
 			},
@@ -44,18 +56,7 @@ export class TimeLogsController extends BaseController implements ITimeLogsContr
 	async getDeveloperTimeLogs(
 		req: Request<{ developerId: string }, object, object>,
 		res: Response,
-		next: NextFunction,
 	): Promise<void> {
-		if (!req.user?.userId) {
-			return next(
-				new HttpError(
-					HttpErrorCode.UNAUTHORIZED,
-					HttpErrorMessages[HttpErrorCode.UNAUTHORIZED],
-					TIME_LOGS_PATHS.GET_DEVELOPER_TIME_LOGS,
-				),
-			);
-		}
-
 		const developerId = parseInt(req.params.developerId);
 
 		let startDate: Date | undefined;
@@ -69,8 +70,7 @@ export class TimeLogsController extends BaseController implements ITimeLogsContr
 				startDate = dateRange.startDate;
 				endDate = dateRange.endDate;
 			}
-		}
-		else if (!period || period === PeriodType.ALL) {
+		} else if (!period || period === PeriodType.ALL) {
 			startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
 			endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 		}
@@ -79,10 +79,44 @@ export class TimeLogsController extends BaseController implements ITimeLogsContr
 			developerId,
 			projectId: req.query.projectId ? parseInt(req.query.projectId as string, 10) : undefined,
 			startDate,
-			endDate
+			endDate,
 		};
 
-		const result: IResponseGetDeveloperTime = await this.timeLogsRepository.getDeveloperTimeLogs(filters)
+		const result: IResponseGetDeveloperTime =
+			await this.timeLogsRepository.getDeveloperTimeLogs(filters);
+		this.ok(res, result);
+	}
+
+	async getProjectTimeLogs(
+		req: Request<{ projectId: string }, object, object>,
+		res: Response,
+	): Promise<void> {
+		const projectId = parseInt(req.params.projectId);
+
+		let startDate: Date | undefined;
+		let endDate: Date | undefined;
+
+		const period = req.query.period as string;
+
+		if (period && period !== PeriodType.ALL) {
+			if (Object.values(PeriodType).includes(period as PeriodType)) {
+				const dateRange = this.getDateRangeByPeriod(period as PeriodType);
+				startDate = dateRange.startDate;
+				endDate = dateRange.endDate;
+			}
+		} else if (!period || period === PeriodType.ALL) {
+			startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+			endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+		}
+
+		const filters: ITimeLogForProjectFilters = {
+			projectId,
+			startDate,
+			endDate,
+		};
+
+		const result: IResponseGetProjectTime =
+			await this.timeLogsRepository.getProjectTimeLogs(filters);
 		this.ok(res, result);
 	}
 

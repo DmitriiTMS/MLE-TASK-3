@@ -39,7 +39,7 @@ const TasksRepositoryMock = {
 	update: jest.fn(),
 	remove: jest.fn(),
 	assignTaskUser: jest.fn(),
-	installStatusTask: jest.fn()
+	installStatusTask: jest.fn(),
 } as jest.Mocked<ITasksRepository>;
 
 const TimeLogsServiceMock = {

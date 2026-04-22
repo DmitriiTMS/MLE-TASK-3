@@ -38,7 +38,7 @@ export class ValidateMiddleware implements IMiddleware {
 		private classToValidate: ClassConstructor<object>,
 		private source: ValidateSource = 'body',
 		private options?: ValidationOptions,
-	) { }
+	) {}
 
 	async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
 		const startTime = Date.now();
@@ -95,15 +95,15 @@ export class ValidateMiddleware implements IMiddleware {
 				break;
 			case 'query':
 				// Очищаем существующие свойства и добавляем новые
-				Object.keys(req.query).forEach(key => delete req.query[key]);
+				Object.keys(req.query).forEach((key) => delete req.query[key]);
 				Object.assign(req.query, instance);
 				break;
 			case 'params':
-				Object.keys(req.params).forEach(key => delete req.params[key]);
+				Object.keys(req.params).forEach((key) => delete req.params[key]);
 				Object.assign(req.params, instance);
 				break;
 			case 'headers':
-				Object.keys(req.headers).forEach(key => delete req.headers[key]);
+				Object.keys(req.headers).forEach((key) => delete req.headers[key]);
 				Object.assign(req.headers, instance);
 				break;
 		}

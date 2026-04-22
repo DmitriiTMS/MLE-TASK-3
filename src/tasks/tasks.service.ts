@@ -23,7 +23,7 @@ export class TasksService implements ITasksService {
 		@inject(TYPES.IProjectsService) private readonly projectsService: IProjectsService,
 		@inject(TYPES.ITasksRepository) private readonly tasksRepository: ITasksRepository,
 		@inject(TYPES.ITimeLogsService) private readonly timeLogsService: ITimeLogsService,
-	) { }
+	) {}
 
 	async createTask(data: ICreateTaskData): Promise<TaskEntity> {
 		await this.userService.getUserOrThrow(
@@ -194,7 +194,6 @@ export class TasksService implements ITasksService {
 				TASKS_PATHS.ASSIGN_TASK_USER,
 			);
 		}
-
 	}
 
 	async installStatusTask(data: IUpdateStatusService): Promise<void> {
@@ -224,23 +223,22 @@ export class TasksService implements ITasksService {
 			await this.tasksRepository.installStatusTask({
 				taskId: data.dataInfo.taskId,
 				status: data.dataInfo.status,
-				completedAt: new Date()
-			})
+				completedAt: new Date(),
+			});
 		} else {
 			await this.tasksRepository.installStatusTask({
 				taskId: data.dataInfo.taskId,
 				status: data.dataInfo.status,
-				completedAt: null
-			})
+				completedAt: null,
+			});
 		}
 
 		if (data.dataInfo.status === TaskStatus.IN_PROGRESS) {
-			await this.timeLogsService.startWorkOnTask(task, data.userId)
+			await this.timeLogsService.startWorkOnTask(task, data.userId);
 		}
 		if (data.dataInfo.status === TaskStatus.COMPLETED) {
-			await this.timeLogsService.completeTask(task, data.userId)
+			await this.timeLogsService.completeTask(task, data.userId);
 		}
-
 	}
 
 	async getTaskOrThrow(taskId: number, message: string, errorPath?: string): Promise<TaskModel> {

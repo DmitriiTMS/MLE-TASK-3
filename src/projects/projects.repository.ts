@@ -21,12 +21,12 @@ export class ProjectsRepository implements IProjectsRepository {
 						status: true,
 						executor: {
 							select: {
-								name: true
-							}
-						}
-					}
-				}
-			}
+								name: true,
+							},
+						},
+					},
+				},
+			},
 		});
 	}
 

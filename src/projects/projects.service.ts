@@ -28,7 +28,7 @@ export class ProjectsService implements IProjectsService {
 			PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID,
 		);
 		const result = await this.projectsRepository.getAllProjectsByUserId(userId);
-		return result
+		return result;
 	}
 
 	async getProjectByUserId(projectId: number, userId: number): Promise<ProjectEntity> {
