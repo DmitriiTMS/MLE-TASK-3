@@ -64,11 +64,11 @@ export interface IUpdateAssignUserService {
 
 export interface IUpdateStatusRepository {
 	taskId: number;
-	status: TaskStatus,
-	completedAt?: Date | null
+	status: TaskStatus;
+	completedAt?: Date | null;
 }
 
 export interface IUpdateStatusService {
 	userId: number;
-	dataInfo: IUpdateStatusRepository
+	dataInfo: IUpdateStatusRepository;
 }

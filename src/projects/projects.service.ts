@@ -12,6 +12,7 @@ import { IUserService } from '../users/user.service.interface';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectModel } from '@prisma/client';
 import { USERS_MESSAGES } from '../users/constants';
+import { IResponseProjectsRepository } from './types';
 
 @injectable()
 export class ProjectsService implements IProjectsService {
@@ -20,14 +21,14 @@ export class ProjectsService implements IProjectsService {
 		@inject(TYPES.IProjectsRepository) private readonly projectsRepository: ProjectsRepository,
 	) {}
 
-	async getAllProjectsByUserId(userId: number): Promise<ProjectEntity[]> {
+	async getAllProjectsByUserId(userId: number): Promise<IResponseProjectsRepository[]> {
 		await this.userService.getUserOrThrow(
 			userId,
 			USERS_MESSAGES.USER_NOT_FOUND,
 			PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID,
 		);
 		const result = await this.projectsRepository.getAllProjectsByUserId(userId);
-		return result.map((project) => ProjectEntity.fromDatabase(project));
+		return result;
 	}
 
 	async getProjectByUserId(projectId: number, userId: number): Promise<ProjectEntity> {

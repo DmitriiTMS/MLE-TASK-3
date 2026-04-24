@@ -7,6 +7,7 @@ import request from 'supertest';
 import { BASE_PROJECTS_PATH, PROJECTS_MESSAGES, PROJECTS_PATH } from '../../src/projects/constants';
 import { AUTH_PATHS, BASE_AUTH_PATH } from '../../src/auth/constants';
 
+
 // npm run test:e2e -- tests/projects/projects.e2e.ts
 
 const LoggerMock = {
@@ -162,6 +163,7 @@ describe('ProjectsController', () => {
         });
     });
 
+    
     describe(`GET ${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID} - getAllProjectsByUserId`, () => {
         beforeEach(async () => {
             const registerResponse = await request(application.app)
@@ -171,6 +173,7 @@ describe('ProjectsController', () => {
             authToken = registerResponse.body.accessToken;
             userId = registerResponse.body.id;
         });
+
         it('should return 401 when no token provided', async () => {
             await request(application.app)
                 .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
@@ -188,7 +191,7 @@ describe('ProjectsController', () => {
 
         it('should return projects when user has projects', async () => {
             await request(application.app)
-                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'Project 1',
@@ -197,7 +200,7 @@ describe('ProjectsController', () => {
                 .expect(201);
 
             await request(application.app)
-                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'Project 2',
@@ -214,22 +217,22 @@ describe('ProjectsController', () => {
             expect(response.body[0]).toHaveProperty('id');
             expect(response.body[0]).toHaveProperty('name');
             expect(response.body[0]).toHaveProperty('description');
+            expect(response.body[0]).toHaveProperty('tasks');
+            expect(response.body[0].tasks).toBeInstanceOf(Array);
 
             expect(response.body[0].name).toBe('Project 1');
             expect(response.body[1].name).toBe('Project 2');
         });
 
         it('should return only user\'s own projects (not other users\' projects)', async () => {
-
             await request(application.app)
-                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'User 1 Project',
                     description: 'Description',
                 })
                 .expect(201);
-
 
             const secondUserRegister = await request(application.app)
                 .post(`${BASE_AUTH_PATH}${AUTH_PATHS.REGISTER}`)
@@ -250,7 +253,6 @@ describe('ProjectsController', () => {
                 })
                 .expect(201);
 
-
             const response = await request(application.app)
                 .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
                 .set('Authorization', `Bearer ${authToken}`)
@@ -260,8 +262,7 @@ describe('ProjectsController', () => {
             expect(response.body[0].name).toBe('User 1 Project');
         });
 
-        it('should return projects with correct structure', async () => {
-
+        it('should return projects with correct structure (tasks array may be empty)', async () => {
             await request(application.app)
                 .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
                 .set('Authorization', `Bearer ${authToken}`)
@@ -276,11 +277,35 @@ describe('ProjectsController', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(200);
 
-            expect(response.body[0]).toEqual({
+            expect(response.body[0]).toMatchObject({
                 id: expect.any(Number),
                 name: 'Test Project',
                 description: 'Test Description',
+                userId: userId,
+                tasks: expect.any(Array)
             });
+
+            expect(response.body[0]).toHaveProperty('createdAt');
+            expect(response.body[0]).toHaveProperty('updatedAt');
+        });
+
+        it('should return projects with tasks array (may be empty by default)', async () => {
+            await request(application.app)
+                .post(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.CREATE}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Project Without Tasks',
+                    description: 'Description',
+                })
+                .expect(201);
+
+            const response = await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            expect(response.body[0]).toHaveProperty('tasks');
+            expect(Array.isArray(response.body[0].tasks)).toBe(true);
         });
 
         it('should return 401 with invalid token', async () => {
@@ -297,7 +322,12 @@ describe('ProjectsController', () => {
                 .expect(401);
         });
 
-    })
+        it('should return 401 when user is not authenticated', async () => {
+            await request(application.app)
+                .get(`${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_ALL_PROJECTS_BY_USER_ID}`)
+                .expect(401);
+        });
+    });
 
     describe(`GET ${BASE_PROJECTS_PATH}${PROJECTS_PATH.GET_PROJECT_BY_USER_ID} - getProjectByUserId`, () => {
 
@@ -471,7 +501,7 @@ describe('ProjectsController', () => {
 
             expect(updatedProject).toBeDefined();
             expect(updatedProject?.name).toBe('Only Name Updated');
-            expect(updatedProject?.description).toBe('Original Description'); 
+            expect(updatedProject?.description).toBe('Original Description');
         });
 
         it('should successfully update only description', async () => {
@@ -492,7 +522,7 @@ describe('ProjectsController', () => {
             });
 
             expect(updatedProject).toBeDefined();
-            expect(updatedProject?.name).toBe('Original Project Name'); 
+            expect(updatedProject?.name).toBe('Original Project Name');
             expect(updatedProject?.description).toBe('Only Description Updated');
         });
 

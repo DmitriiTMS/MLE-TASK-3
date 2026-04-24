@@ -22,22 +22,22 @@ services:
       retries: 5
       start_period: 10s
 
-  # app:
-  #   build: .
-  #   container_name: express
-  #   ports:
-  #     - "${PORT}:4200"
-  #   environment:
-  #     - DATABASE_URL=${DATABASE_URL}
-  #     - PORT=${PORT}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   restart: unless-stopped
-  #   networks:
-  #     - app_network
-  #   env_file:
-  #     - .env
+  app:
+    build: .
+    container_name: express
+    ports:
+      - "${PORT}:4200"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=${PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app_network
+    env_file:
+      - .env
 
 networks:
   app_network:

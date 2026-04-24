@@ -188,7 +188,7 @@ export class TasksController extends BaseController implements ITasksController 
 			dataInfo: {
 				taskId,
 				status: req.body.status,
-			}
+			},
 		});
 
 		this.noContent(res, {});

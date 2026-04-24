@@ -94,10 +94,17 @@ export class ValidateMiddleware implements IMiddleware {
 				req.body = instance;
 				break;
 			case 'query':
-				req.query = instance as unknown as ParsedQs;
+				// Очищаем существующие свойства и добавляем новые
+				Object.keys(req.query).forEach((key) => delete req.query[key]);
+				Object.assign(req.query, instance);
 				break;
 			case 'params':
-				req.params = instance as Record<string, string>;
+				Object.keys(req.params).forEach((key) => delete req.params[key]);
+				Object.assign(req.params, instance);
+				break;
+			case 'headers':
+				Object.keys(req.headers).forEach((key) => delete req.headers[key]);
+				Object.assign(req.headers, instance);
 				break;
 		}
 	}

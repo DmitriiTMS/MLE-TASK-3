@@ -1,14 +1,19 @@
 import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ITasksRepository } from './tasks.reposotory.interface';
-import { ICreateTaskData, IUpdateAssignUserRepository, IUpdateStatusRepository, IUpdateTaskData } from './types';
+import {
+	ICreateTaskData,
+	IUpdateAssignUserRepository,
+	IUpdateStatusRepository,
+	IUpdateTaskData,
+} from './types';
 import { TYPES } from '../common/types/types';
 import { PrismaService } from '../common/database/prisma.service';
 import { TaskModel } from '@prisma/client';
 
 @injectable()
 export class TasksRepository implements ITasksRepository {
-	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) { }
+	constructor(@inject(TYPES.PrismaService) private readonly prismaService: PrismaService) {}
 
 	async create(data: ICreateTaskData): Promise<TaskModel> {
 		try {
@@ -87,12 +92,11 @@ export class TasksRepository implements ITasksRepository {
 				where: { id: data.taskId },
 				data: {
 					status: data.status,
-					completedAt: data.completedAt
+					completedAt: data.completedAt,
 				},
 			});
 		} catch (error) {
 			throw error;
 		}
 	}
-
 }

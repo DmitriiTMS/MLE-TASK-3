@@ -118,18 +118,6 @@ export class TaskEntity {
 		return this._executorUserId === userId;
 	}
 
-	isCompleted(): boolean {
-		return this._status === TaskStatus.COMPLETED;
-	}
-
-	isInProgress(): boolean {
-		return this._status === TaskStatus.IN_PROGRESS;
-	}
-
-	isCreated(): boolean {
-		return this._status === TaskStatus.CREATED;
-	}
-
 	updateFields(updates: {
 		title?: string;
 		description?: string | null;
