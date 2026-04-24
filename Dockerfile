@@ -23,4 +23,4 @@ COPY --from=builder /app/.env ./.env
 
 EXPOSE 4200
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run db:seed && node dist/main.js"]

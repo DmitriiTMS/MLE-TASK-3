@@ -8,13 +8,16 @@
   "scripts": {
     "build": "tsc && prisma generate",
     "start": "prisma migrate deploy && node ./dist/main.js",
+    "start:with-seed": "npm run db:seed:reset && npm run start",
     "dev": "prisma generate && prisma migrate deploy && nodemon",
     "migrate:dev": "prisma migrate dev",
     "generate:dev": "prisma generate",
     "lint": "eslint ./src/**",
     "lint:fix": "eslint ./src/** --fix",
     "test": "jest",
-    "test:e2e": "jest --config jest.e2e.config.js --runInBand"
+    "test:e2e": "jest --config jest.e2e.config.js --runInBand",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed:reset": "prisma migrate reset && ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
