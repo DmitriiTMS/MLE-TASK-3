@@ -1,0 +1,933 @@
+{
+  "info": {
+    "_postman_id": "de805523-826c-44e1-b66b-fcde26891b39",
+    "name": "MLE-TASK-3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "19313337"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Регистрация",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\":\"user3\",\r\n    \"email\":\"a3@bk.ru\",\r\n    \"password\":\"1234\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Вход",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\":\"a1@bk.ru\",\r\n    \"password\":\"1234\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Обновление токена",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/auth/refresh-token",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "auth",
+                "refresh-token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение информации о пользователе",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImExQGJrLnJ1IiwiaWF0IjoxNzc1NDkwNzYyLCJleHAiOjE3NzU0OTE2NjJ9.Kz9td04cMlZZE63qpyjjzsdgW1H_4E1Pm-nPBAMatxY",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/auth/get-me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "auth",
+                "get-me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Выход",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjg1LCJlbWFpbCI6ImExQGJrLnJ1IiwiaWF0IjoxNzc1NTY1ODg4LCJleHAiOjE3NzU1NjY3ODh9.urYaSrAviUPPLHZEh4yl8lBGyrGvq0zo1ujUTtHa0Ik",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/auth/logout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Создание проекта",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY1MDM2MTksImV4cCI6MTc3NjUwNDUxOX0.nRbbuF1foVHWoFT5pBtbKym7tay14a48NO2KFwhZBac",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"project1\",\r\n    \"description\":\"description1\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/projects",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "projects"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Порлучение проектов для пользователя",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY3MDI0NzMsImV4cCI6MTc3NjcwMzM3M30.z98PuBaGAYgGqj4ZofxrF9kqt7jA-Sk1hSwW1LHiPMw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/projects",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "projects"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение проекта",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoiYTJAYmsucnUiLCJpYXQiOjE3NzU4Mjg4OTUsImV4cCI6MTc3NTgyOTc5NX0.2LNgLoSDng-AnOhJDTOuIcvMHoWOSDTHIb8BITtfQJ0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/projects/5",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "projects",
+                "5"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Удаление проекта",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzYwODg3MTcsImV4cCI6MTc3NjA4OTYxN30.2xfeAx6YXMseWEbNGtKvFysnh5rSzozU8s-5jOsPTus",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/projects/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "projects",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Обновление проекта",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzU5MDcxMjQsImV4cCI6MTc3NTkwODAyNH0.4hjVC4lOvBDLZRnDIsQ429gAKa5r1pFKdme4ylcTyJs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"333333333333\",\r\n    \"description\":\"bcmnvcm\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/projects/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "projects",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Создание задачи",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY1MDM2MTksImV4cCI6MTc3NjUwNDUxOX0.nRbbuF1foVHWoFT5pBtbKym7tay14a48NO2KFwhZBac",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"task1\",\r\n    \"description\": \"111111111111\",\r\n    \"dueDate\": \"2024-12-31T23:59:59.999Z\"\r\n    // \"executorUserId\": 3\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/projects/4/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "projects",
+                "4",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение одной задачи",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiYTJAYmsucnUiLCJpYXQiOjE3NzYxNTE1ODgsImV4cCI6MTc3NjE1MjQ4OH0.s6OQ9SZEBAV_o0x-KacmCno-u4Iz01eLc3GSL2fTL9Y",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/tasks/9",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "tasks",
+                "9"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Обновление задачи",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiYTJAYmsucnUiLCJpYXQiOjE3NzYxOTI1ODYsImV4cCI6MTc3NjE5MzQ4Nn0.mADtbzaJiIyRKrpH-2s9T3r38WWDI3Jz0x2MTUZPl4U",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"task22222222222\",\r\n    \"description\": \"111111111111\",\r\n    \"dueDate\": \"2024-12-31T23:59:59.999Z\",\r\n    \"executorUserId\": 3\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/tasks/9",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "tasks",
+                "9"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Удаление задачи",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzYxOTU0MDcsImV4cCI6MTc3NjE5NjMwN30.4HT-2vWlBHcNcSJU1JFGkqAhZWCR3E5pYz_X1YnX_sM",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4200/api/tasks/9",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "tasks",
+                "9"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Назначение исполнителя задачи",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY1MDM2MTksImV4cCI6MTc3NjUwNDUxOX0.nRbbuF1foVHWoFT5pBtbKym7tay14a48NO2KFwhZBac",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"executorUserId\": 2\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/tasks/12/assign",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "tasks",
+                "12",
+                "assign"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Установление статуса задачи",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiYTJAYmsucnUiLCJpYXQiOjE3NzY1MDM3ODAsImV4cCI6MTc3NjUwNDY4MH0.CwTzHgJdXweSYH2EoyUZ2L8gSQ3QASKGLiGgZWa24HA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\": \"COMPLETED\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:4200/api/tasks/12/status",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4200",
+              "path": [
+                "api",
+                "tasks",
+                "12",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TimeLogs",
+      "item": [
+        {
+          "name": "getDeveloperTimeLogs",
+          "item": [
+            {
+              "name": "Один проект за месяц",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY3NjgyMDIsImV4cCI6MTc3Njc2OTEwMn0.wPachfFsBEwYC44lxvQ4HebZGGvjQ9LaYp-3Pho8R9U",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/developer/1?period=month&projectId=4",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "developer",
+                    "1"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "month"
+                    },
+                    {
+                      "key": "projectId",
+                      "value": "4"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Все проекты за текущую неделю",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY3NjgyMDIsImV4cCI6MTc3Njc2OTEwMn0.wPachfFsBEwYC44lxvQ4HebZGGvjQ9LaYp-3Pho8R9U",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/developer/2?period=week",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "developer",
+                    "2"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "week"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Один проект за неделю",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/developer/2?period=week&projectId=4",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "developer",
+                    "2"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "week"
+                    },
+                    {
+                      "key": "projectId",
+                      "value": "4"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Все проекты за месяц",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY3Njg1MjYsImV4cCI6MTc3Njc2OTQyNn0.JfFK-K3K7yW9bRGQ9Ylr7TOyLTY-NzeYB7MNvgM0WFo",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/developer/2?period=month",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "developer",
+                    "2"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "month"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Один проект за кастомный период",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY3Njg1MjYsImV4cCI6MTc3Njc2OTQyNn0.JfFK-K3K7yW9bRGQ9Ylr7TOyLTY-NzeYB7MNvgM0WFo",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/developer/2?projectId=4&startDate=2026-04-01&endDate=2026-04-30",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "developer",
+                    "2"
+                  ],
+                  "query": [
+                    {
+                      "key": "projectId",
+                      "value": "4"
+                    },
+                    {
+                      "key": "startDate",
+                      "value": "2026-04-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2026-04-30"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Все проекты за кастомный период",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYTFAYmsucnUiLCJpYXQiOjE3NzY3Njg3ODIsImV4cCI6MTc3Njc2OTY4Mn0.HwdwqYksQBUcD4N76C9DRCBNBnXhA9O6Y_WslpYKb5o",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/developer/2?startDate=2026-04-01&endDate=2026-04-30",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "developer",
+                    "2"
+                  ],
+                  "query": [
+                    {
+                      "key": "startDate",
+                      "value": "2026-04-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2026-04-30"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "getProjectTimeLogs",
+          "item": [
+            {
+              "name": "Время работы всех разработчиков над проектом за всё время",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/project/6",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "project",
+                    "6"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Время работы всех разработчиков над проектом за текущую неделю",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/project/4?period=week",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "project",
+                    "4"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "week"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Время работы всех разработчиков над проектом за текущий месяц",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/project/4?period=month",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "project",
+                    "4"
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "month"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Время работы всех разработчиков над проектом за кастомный период",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4200/api/reports/project/4?startDate=2026-04-01&endDate=2026-04-31",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4200",
+                  "path": [
+                    "api",
+                    "reports",
+                    "project",
+                    "4"
+                  ],
+                  "query": [
+                    {
+                      "key": "startDate",
+                      "value": "2026-04-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2026-04-31"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
